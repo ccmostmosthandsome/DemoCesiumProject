@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>点线面显隐</title>
+    <script src="../Build/Cesium/Cesium.js"></script>
+    <style>
+        @import "../Build/Cesium/Widgets/widgets.css";
+        @import "common.css";
+    </style>
+</head>
+<body>
+<div id="CesiumContainer"></div>
+<div id="GraphicShowHide">
+    点显示<input type="checkbox" name="Point" checked="checked">
+    线显示<input type="checkbox" name="Polyline" checked="checked">
+    面显示<input type="checkbox" name="Polygon" checked="checked">
+</div>
+
+<script>
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer");
+
+    initData();
+    //binding event
+    let nodes=document.querySelectorAll("#GraphicShowHide input");
+    for(let i=0;i<nodes.length;++i){
+        nodes.item(i).addEventListener("click",function (evt) {
+            console.log(evt);
+            let str=evt.target.name;
+            processShowHideEffcient(str,evt.target.checked,viewer.entities.values);
+        });
+    }
+
+    /**
+     * 控制entity显隐 此版本假设集合内为乱序，Point,Polygon,Polygon
+     * @param graphicName entity的category name PointGraphics->Point
+     * @param isShow
+     * @param entities Array 要控制entity集合
+     */
+    function processShowHide(graphicName,isShow,entities) {
+        if(entities==undefined||entities.length==0)return;
+
+        for(let i=0;i<entities.length;++i){
+            if(graphicName==="Point"){
+                if(entities[i].point!==undefined){
+                    entities[i].show=isShow;
+                }
+            }else if(graphicName==="Polyline"){
+                if(entities[i].polyline!==undefined){
+                    entities[i].show=isShow;
+                }
+            }else if(graphicName==="Polygon"){
+                if(entities[i].polygon!==undefined){
+                    entities[i].show=isShow;
+                }
+            }
+        }
+    }
+
+    /**
+     * 假定entities的排序是点，线，面,并且只有这三个
+     * @param graphicName
+     * @param isShow
+     * @param entities Array
+     */
+    function processShowHideEffcient(graphicName,isShow,entities) {
+        if(entities==undefined||entities.length==0)return;
+        //find first entity index
+        let index1=0;
+        let index2=entities.length;
+        for(let i=0;i<entities.length;++i){
+            if(entities[i].polyline!==undefined&&entities[i-1==0?0:i-1].point!==undefined){
+                index1=i;
+            }
+            if(entities[i].polygon!==undefined&&entities[i-1==0?0:i-1].polyline!==undefined){
+                index2=i;
+            }
+        }
+
+        if(graphicName==="Point"){
+            for(let i=0;i<index1;++i){
+                entities[i].show=isShow;
+            }
+        }else if(graphicName==="Polyline"){
+            for(let i=index1;i<index2;++i){
+                entities[i].show=isShow;
+            }
+        }else if(graphicName==="Polygon"){
+            for(let i=index2;i<entities.length;++i){
+                entities[i].show=isShow;
+            }
+        }
+
+    }
+    function initData() {
+        viewer.entities.add({
+            name:"测试点1",
+            position:Cesium.Cartesian3.fromDegrees(100,40,1000),
+            point:new Cesium.PointGraphics({
+                outlineColor:Cesium.Color.GREEN,
+                outlineWidth:5.0,
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+            })
+        });
+        viewer.entities.add({
+            name:"测试点2",
+            position:Cesium.Cartesian3.fromDegrees(110,40,1000),
+            point:new Cesium.PointGraphics({
+                outlineColor:Cesium.Color.GREEN,
+                outlineWidth:5.0,
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+            })
+        });
+        viewer.entities.add({
+            name:"测试点3",
+            position:Cesium.Cartesian3.fromDegrees(120,40,1000),
+            point:new Cesium.PointGraphics({
+                outlineColor:Cesium.Color.GREEN,
+                outlineWidth:5.0,
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+            })
+        });
+        viewer.entities.add({
+            name:"测试线1",
+            polyline:new Cesium.PolylineGraphics({
+                positions:Cesium.Cartesian3.fromDegreesArray([
+                    100,30,
+                    90,30,
+                    95,30,
+                    100,35
+                ])
+            })
+        });
+        viewer.entities.add({
+            name:"测试线2",
+            polyline:new Cesium.PolylineGraphics({
+                positions:Cesium.Cartesian3.fromDegreesArray([
+                    100,20,
+                    90,20,
+                    95,15
+                ])
+
+            })
+        });
+        viewer.entities.add({
+            name:"测试面",
+            polygon:new Cesium.PolygonGraphics({
+                hierarchy:new Cesium.PolygonHierarchy(
+                    Cesium.Cartesian3.fromDegreesArray([
+                        100,20,
+                        100,15,
+                        90,15,
+                        90,20
+                    ])),
+                height:1000,
+                //material:Cesium.Color.YELLOW,
+                outlineColor:Cesium.Color.ORANGE,
+                outlineWidth:5.0,
+                outline:true,
+            })
+        });
+        viewer.zoomTo(viewer.entities);
+    }
+</script>
+</body>
+</html>

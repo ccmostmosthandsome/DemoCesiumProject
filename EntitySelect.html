@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>点,线,面选中</title>
+    <script src="../Build/Cesium/Cesium.js"></script>
+    <style>
+        @import "../Build/Cesium/Widgets/widgets.css";
+        @import "common.css";
+    </style>
+</head>
+<body>
+<div id="CesiumContainer"></div>
+
+<script>
+    //全局高亮设置
+    const HIGHTLIGHTCOLOR=Cesium.Color.RED;
+
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer",{
+        //选择指示器
+        selectionIndicator:false,
+        infoBox:false
+    });
+
+    initData();
+    /*
+    此函数假定一个entity只有一个graphic
+    * */
+    function processSelect(entity,color) {
+        if(entity==undefined)return;
+        if(entity.point!==undefined){
+            entity.point.color=color;
+        }else if(entity.polyline!==undefined){
+            entity.polyline.material=color;
+        }else if(entity.polygon!==undefined){
+            entity.polygon.material=color;
+        }
+        /*
+        else if(entity.rectangle!==undefined){
+            entity.rectangle.material=color;
+        }else if(entity.wall!==undefined){
+            entity.wall.material=color;
+        }else if(entity.plane!==undefined){
+            entity.plane.material=color;
+        }else if(entity.path!==undefined){
+            entity.path.material=color;
+        }else if(entity.model!==undefined){
+            entity.model.color=color;
+        }else if(entity.label!==undefined){
+            entity.label.fillColor=color;
+        }else if(entity.ellipsoid!==undefined){
+            entity.ellipsoid.material=color;
+        }else if(entity.ellipse!==undefined){
+            entity.ellipse.material=color;
+        }else if(entity.cylinder!==undefined){
+            entity.cylinder.material=color;
+        }else if(entity.corridor!==undefined){
+            entity.corridor.material=color;
+        }else if(entity.box!==undefined){
+            entity.box.material=color;
+        }else if(entity.billboard!==undefined){
+            entity.billboard.material=color;
+        }else if(entity.polylineVolume!==undefined){
+            entity.polylineVolume.material=color;
+        }
+        */
+    }
+    function initData() {
+        //在所有的**Graphics里加入自定以的attributes,从而显示entity的其他属性
+        let point=viewer.entities.add({
+            id:"point entity",
+            name:"测试点",
+            //东经，北纬 ，高度
+            //西经，南纬加 -
+            position:Cesium.Cartesian3.fromDegrees(100,40,1000),
+            point:new Cesium.PointGraphics({
+                outlineColor:Cesium.Color.GREEN,
+                outlineWidth:5.0,
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+            }),
+
+            attributes:{
+                data:"point"
+            }
+        });
+        viewer.entities.add({
+            id:"line entity",
+            name:"测试线",
+            polyline:new Cesium.PolylineGraphics({
+                positions:Cesium.Cartesian3.fromDegreesArray([
+                    100,30,
+                    90,30,
+                    95,30,
+                    100,35
+                ]),
+                //material:Cesium.Color.CYAN,
+                width:1.0
+            }),
+            attributes:{
+                data:"line"
+            }
+        });
+        viewer.entities.add({
+            id:"polygon entity",
+            name:"测试面",
+            polygon:new Cesium.PolygonGraphics({
+                hierarchy:new Cesium.PolygonHierarchy(
+                    Cesium.Cartesian3.fromDegreesArray([
+                        100,20,
+                        100,15,
+                        90,15,
+                        90,20
+                    ])),
+                height:1000,
+                outlineColor:Cesium.Color.ORANGE,
+                outlineWidth:2.0,
+                outline:true,
+            }),
+            attributes:{
+                data:"polygon"
+            }
+        });
+        viewer.screenSpaceEventHandler.setInputAction(function leftClick(click) {
+            let pick=viewer.scene.pick(click.position);
+            //判断
+            if(pick==undefined){
+                //遍历容器内的entity,恢复默认值
+                let entities=viewer.entities.values;
+                for(let i=0;i<entities.length;++i){
+                    processSelect(entities[i],Cesium.Color.WHITE);
+                }
+            }
+            else{
+                processSelect(pick.id,HIGHTLIGHTCOLOR);
+                //print info
+                alert(pick.id.attributes.data);
+            }
+
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        viewer.flyTo(point);
+    }
+</script>
+</body>
+</html>

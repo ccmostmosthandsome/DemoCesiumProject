@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>点,线,面添加</title>
+    <script src="../Build/Cesium/Cesium.js"></script>
+    <style>
+        @import "../Build/Cesium/Widgets/widgets.css";
+        @import "common.css";
+    </style>
+</head>
+<body>
+<div id="CesiumContainer"></div>
+<button id="addPoint">地标点添加</button>
+<button id="addLine">线添加</button>
+<button id="addPolygon">面添加</button>
+<script>
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer");
+    document.getElementById("addPoint").onclick=function () {
+        let point=viewer.entities.add({
+            id:"point entity",
+            name:"测试点",
+            position:Cesium.Cartesian3.fromDegrees(100,40,1000),
+            point:new Cesium.PointGraphics({
+                color:Cesium.Color.YELLOW,
+                outlineColor:Cesium.Color.GREEN,
+                outlineWidth:5.0,
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+            })
+        });
+        viewer.flyTo(point,{
+            maximumHeight:10000,
+            duration:5//时长
+        });
+    };
+    document.getElementById("addLine").onclick=function () {
+        let line=viewer.entities.add({
+            id:"line entity",
+            name:"测试线",
+            polyline:new Cesium.PolylineGraphics({
+                positions:Cesium.Cartesian3.fromDegreesArray([
+                    100,30,
+                    90,30,
+                    95,30,
+                    100,35
+                ]),
+                material:Cesium.Color.CYAN,
+                width:5.0
+            })
+        });
+        viewer.flyTo(line,{
+            maximumHeight:10000,
+            duration:5
+        });
+    };
+    document.getElementById("addPolygon").onclick=function () {
+        let polygon=viewer.entities.add({
+            id:"polygon entity",
+            name:"测试面",
+            polygon:new Cesium.PolygonGraphics({
+                hierarchy:new Cesium.PolygonHierarchy(
+                    Cesium.Cartesian3.fromDegreesArray([
+                      100,20,
+                      100,15,
+                      90,15,
+                      90,20
+                    ])),
+                height:1000,
+                material:Cesium.Color.YELLOW,
+                outlineColor:Cesium.Color.ORANGE,
+                outlineWidth:5.0,
+                outline:true,
+            })
+        });
+        viewer.flyTo(polygon,{
+            maximumHeight:10000,
+            duration:5
+        });
+    };
+</script>
+</body>
+</html>

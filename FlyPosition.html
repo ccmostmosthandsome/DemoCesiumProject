@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>飞行定位</title>
+    <script src="../Build/Cesium/Cesium.js"></script>
+    <style>
+        @import "../Build/Cesium/Widgets/widgets.css";
+        @import "common.css";
+    </style>
+</head>
+<body>
+<div id="CesiumContainer"></div>
+<button id="flyTo">飞行定位</button>
+<script>
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer");
+    let box=viewer.entities.add({
+        //id不能重复
+        id:"testentity",
+        name:"box",
+        position:Cesium.Cartesian3.fromDegrees(100,40,1000),
+        box:new Cesium.BoxGraphics({
+            dimensions:new Cesium.Cartesian3(1000,2000,3000),
+            material:new Cesium.ColorMaterialProperty(Cesium.Color.RED),
+            shadows:Cesium.ShadowMode.ENABLE
+        })
+    });
+    document.getElementById("flyTo").onclick=function () {
+        viewer.flyTo(box,{
+            maximumHeight:50000,
+            duration:5
+        });
+    }
+
+</script>
+</body>
+</html>
