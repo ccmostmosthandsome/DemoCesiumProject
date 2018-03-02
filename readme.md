@@ -8,5 +8,6 @@ this project is use for demo function
 3. <a href="EntitySelect.html">地标点点击选中，线代码点击选中，面代码点击选中</a>
 4. <a href="EntityCustomAdd.html">点线面的手工绘制添加</a>
 5. <a href="EntityCategoryShowHide.html">点线面的显隐控制</a>
+6. <a href="IntergratedFile.html">合并版</a>
 
 
