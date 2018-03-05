@@ -37,7 +37,8 @@ this is 各个demo的合并版
     <div class="space"></div>
     <div class="showBorder">
         <p>飞行定位</p>
-        <button id="FlyTo">定位</button>
+        <button id="flyToImpl1">飞行定位实现1</button>
+        <button id="flyToImpl2">飞行定位实现2</button>
     </div>
     <div class="space"></div>
     <div id="GraphicAdd" class="showBorder">
@@ -74,7 +75,8 @@ this is 各个demo的合并版
     //init
     function InitFlyToFunction() {
         //binding event
-        document.getElementById("FlyTo").onclick=function () {
+        document.getElementById("flyToImpl1").onclick=function () {
+            alert("将定位到预定义的box位置");
             let box=viewer.entities.add({
                 //id不能重复
                 //id:"testentity",
@@ -86,11 +88,21 @@ this is 各个demo的合并版
                     shadows:Cesium.ShadowMode.ENABLE
                 })
             });
+            //impl1
             viewer.flyTo(box,{
                 maximumHeight:50000,
                 duration:5
             });
         };
+        document.getElementById("flyToImpl2").onclick=function () {
+            //impl2
+            alert("将定位到90 W,30 N 2000 H位置");
+            viewer.camera.flyTo({
+                destination:Cesium.Cartesian3.fromDegrees(90,30,2000),
+                duration:5
+            });
+
+        }
 
     }
     function InitEntityCustomAddFunction() {
