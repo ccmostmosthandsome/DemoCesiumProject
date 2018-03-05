@@ -32,7 +32,7 @@ date 2018.2.28
         nodes.item(i).addEventListener("click",function (evt) {
             console.log(evt);
             let str=evt.target.name;
-            processShowHideEffcient(str,evt.target.checked,viewer.entities.values);
+            processShowHide(str,evt.target.checked,viewer.entities.values);
         });
     }
 
