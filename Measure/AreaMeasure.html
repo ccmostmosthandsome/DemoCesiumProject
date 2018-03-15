@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>面积测量</title>
+    <script src="../../Build/Cesium/Cesium.js"></script>
+    <style>
+        @import "../common.css";
+        @import "../../Build/Cesium/Widgets/widgets.css";
+    </style>
+</head>
+<body>
+<div id="CesiumContainer"></div>
+<script>
+    /*
+  * 距离测量，先得到点的坐标，然后转为Web Mercator投影，三个点以上时计算面积
+  * 此测量在地理坐标系下无法进行。因为投影坐标系无法确定
+  * */
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer");
+    let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    var projectionPoints=[];
+    const projection=new Cesium.WebMercatorProjection();
+
+    function calcArea(projectionPoints) {
+        var answer=0;
+        var len=projectionPoints.length;
+        for(let i=0;i<len;++i){
+            answer+=(projectionPoints[i].x-projectionPoints[(i+1)%len].x)*(Math.abs(projectionPoints[i].y)+Math.abs(projectionPoints[(i+1)%len].y));
+        }
+        return answer;
+    }
+
+    handler.setInputAction(function (move) {
+        let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+
+        if(cartesian){
+            let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
+            projectionPoints.push(projection.project(cartographic));
+            if(projectionPoints.length>=3){
+                let area=calcArea(projectionPoints);
+                alert(area.toFixed(2)+' m^2');
+            }
+
+
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+</script>
+</body>
+</html>
