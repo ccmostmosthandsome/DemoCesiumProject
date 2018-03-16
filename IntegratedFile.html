@@ -106,7 +106,6 @@ this is 各个demo的合并版
 
     }
     function InitEntityCustomAddFunction() {
-
         const node= document.getElementById("StartDraw");
         node.onclick=function () {
             if(node.innerHTML=="开始绘制"){
@@ -130,7 +129,7 @@ this is 各个demo的合并版
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     //保持point,polyline,polygon是一致的行为
                     if(cartesian){
-                        entity=ddPoint(cartesian);
+                        entity=addPoint(cartesian);
                         reset();
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
