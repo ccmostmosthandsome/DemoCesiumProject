@@ -28,17 +28,18 @@
 
     /**
      * 计算线的长度
-     * @param cartesian3Points
+     * @param cartesian3Points Array
      * @returns {number}
      */
     function calcLength(cartesianPoints) {
+        var newarray=[];
         for(let i=0;i<cartesianPoints.length;++i){
-            let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-            cartesianPoints[i]=projection.project(cartographic);
+            let cartographic=Cesium.Cartographic.fromCartesian(cartesianPoints[i]);
+            newarray[i]=projection.project(cartographic);
         }
         var answer=0;
-        for(let i=1;i<projectionPoints.length;++i){
-            answer+= Math.abs(Cesium.Cartesian3.distanceSquared(projectionPoints[i-1],projectionPoints[i]));
+        for(let i=1;i<newarray.length;++i){
+            answer+= Math.abs(Cesium.Cartesian3.distanceSquared(newarray[i-1],newarray[i]));
         }
         return answer;
     }
