@@ -37,7 +37,8 @@ this is 各个demo的合并版
     <div class="space"></div>
     <div class="showBorder">
         <p>飞行定位</p>
-        <button id="FlyTo">定位</button>
+        <button id="flyToImpl1">飞行定位实现1</button>
+        <button id="flyToImpl2">飞行定位实现2</button>
     </div>
     <div class="space"></div>
     <div id="GraphicAdd" class="showBorder">
@@ -74,7 +75,8 @@ this is 各个demo的合并版
     //init
     function InitFlyToFunction() {
         //binding event
-        document.getElementById("FlyTo").onclick=function () {
+        document.getElementById("flyToImpl1").onclick=function () {
+            alert("将定位到预定义的box位置");
             let box=viewer.entities.add({
                 //id不能重复
                 //id:"testentity",
@@ -86,11 +88,21 @@ this is 各个demo的合并版
                     shadows:Cesium.ShadowMode.ENABLE
                 })
             });
+            //impl1
             viewer.flyTo(box,{
                 maximumHeight:50000,
                 duration:5
             });
         };
+        document.getElementById("flyToImpl2").onclick=function () {
+            //impl2
+            alert("将定位到90 W,30 N 2000 H位置");
+            viewer.camera.flyTo({
+                destination:Cesium.Cartesian3.fromDegrees(90,30,2000),
+                duration:5
+            });
+
+        }
 
     }
     function InitEntityCustomAddFunction() {
@@ -116,9 +128,10 @@ this is 各个demo的合并版
                 cleanErrorEditData();
                 handler.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                    //保持point,polyline,polygon是一致的行为
                     if(cartesian){
-                        let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                        let pointEntity=addPoint(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                        entity=ddPoint(cartesian);
+                        reset();
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
             };
@@ -129,24 +142,22 @@ this is 各个demo的合并版
                 handler.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian){
-                        let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                        positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                        cartesian3Array.push(cartesian);
                         if(entity!==undefined){
                             viewer.entities.remove(entity);
-                            entity=addLine(positionArray);
+                            entity=addLine(cartesian3Array);
                         }
                         else {
-                            entity=addPoint(positionArray[0]);
+                            entity=addPoint(cartesian3Array[0]);
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
                 handler.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian&&entity!==undefined){
-                        let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                        positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                        cartesian3Array.push(cartesian);
                         viewer.entities.remove(entity);
-                        entity=addLine(positionArray);
+                        entity=addLine(cartesian3Array);
                         //reset
                         reset();
                     }
@@ -159,34 +170,32 @@ this is 各个demo的合并版
                 handler.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian){
-                        let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                        positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                        cartesian3Array.push(cartesian);
                         if(entity!==undefined){
                             viewer.entities.remove(entity);
-                            if(positionArray.length===2){
-                                entity=addLine(positionArray);
+                            if(cartesian3Array.length===2){
+                                entity=addLine(cartesian3Array);
                             }else{
                                 entity=viewer.entities.add({
                                     polygon:new Cesium.PolygonGraphics({
-                                        hierarchy:new Cesium.PolygonHierarchy(positionArray)
+                                        hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
                                     })
                                 });
                             }
                         }
                         else {
-                            entity=addPoint(positionArray[0]);
+                            entity=addPoint(cartesian3Array[0]);
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
                 handler.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian&&entity!==undefined){
-                        let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                        positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                        cartesian3Array.push(cartesian);
                         viewer.entities.remove(entity);
                         entity=viewer.entities.add({
                             polygon:new Cesium.PolygonGraphics({
-                                hierarchy:new Cesium.PolygonHierarchy(positionArray)
+                                hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
                             })
                         });
                         //reset
@@ -232,7 +241,7 @@ this is 各个demo的合并版
 
     //EntityCustomAdd global var
     var entity=undefined;
-    var positionArray=[];
+    var cartesian3Array=[];
     let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     //EntityCustomAdd use
     function addLine(positions) {
@@ -252,7 +261,7 @@ this is 各个demo的合并版
     }
     function reset() {
         entity=undefined;
-        positionArray=[];
+        cartesian3Array=[];
     }
     function cleanErrorEditData() {
         if(entity!==undefined){
@@ -311,7 +320,7 @@ this is 各个demo的合并版
                 entities[i].show=isShow;
             }
         }else if(graphicName==="Polyline"){
-            for(let i=count[0];i<count[1];++i){
+            for(let i=count[0];i<count[1]+count[0];++i){
                 entities[i].show=isShow;
             }
         }else if(graphicName==="Polygon"){

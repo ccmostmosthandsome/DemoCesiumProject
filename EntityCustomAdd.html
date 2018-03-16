@@ -44,15 +44,16 @@ date 2018.2.28
     };
 
     var entity=undefined;
-    var positionArray=[];
+    var cartesian3Array=[];
     document.getElementById("point").onclick=function () {
         //设置inputAction
         cleanErrorEditData();
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+            //保持point,polyline,polygon是一致的行为
             if(cartesian){
-                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                let pointEntity=addPoint(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                entity=addPoint(cartesian);
+                reset();
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
     };
@@ -63,24 +64,22 @@ date 2018.2.28
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
-                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                cartesian3Array.push(cartesian);
                 if(entity!==undefined){
                     viewer.entities.remove(entity);
-                    entity=addLine(positionArray);
+                    entity=addLine(cartesian3Array);
                 }
                 else {
-                    entity=addPoint(positionArray[0]);
+                    entity=addPoint(cartesian3Array[0]);
                 }
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian&&entity!==undefined){
-                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                cartesian3Array.push(cartesian);
                 viewer.entities.remove(entity);
-                entity=addLine(positionArray);
+                entity=addLine(cartesian3Array);
                 //reset
                 reset();
             }
@@ -94,21 +93,21 @@ date 2018.2.28
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
                 let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                cartesian3Array.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
                 if(entity!==undefined){
                     viewer.entities.remove(entity);
-                    if(positionArray.length===2){
-                        entity=addLine(positionArray);
+                    if(cartesian3Array.length===2){
+                        entity=addLine(cartesian3Array);
                     }else{
                         entity=viewer.entities.add({
                             polygon:new Cesium.PolygonGraphics({
-                                hierarchy:new Cesium.PolygonHierarchy(positionArray)
+                                hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
                             })
                         });
                     }
                 }
                 else {
-                    entity=addPoint(positionArray[0]);
+                    entity=addPoint(cartesian3Array[0]);
                 }
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -116,11 +115,11 @@ date 2018.2.28
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian&&entity!==undefined){
                 let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                positionArray.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                cartesian3Array.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
                 viewer.entities.remove(entity);
                 entity=viewer.entities.add({
                     polygon:new Cesium.PolygonGraphics({
-                        hierarchy:new Cesium.PolygonHierarchy(positionArray)
+                        hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
                     })
                 });
                 //reset
@@ -143,9 +142,12 @@ date 2018.2.28
             })
         });
     }
+    /**
+     *将单次画entity清空，以便下次绘画
+     */
     function reset() {
         entity=undefined;
-        positionArray=[];
+        cartesian3Array=[];
     }
     function cleanErrorEditData() {
         if(entity!==undefined){
