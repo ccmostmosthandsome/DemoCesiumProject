@@ -33,7 +33,7 @@ var Editor={
         });
     }
 
-}
+};
 function reset() {
     Globe._entity_=undefined;
     Globe._cartesian3Array_=[];
