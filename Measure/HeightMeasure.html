@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<--
+create author 路建成
+date 2018.3.19
+add use strict
+--!>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>高度测量</title>
+    <script src="../../Build/Cesium/Cesium.js"></script>
+    <style>
+        @import "../common.css";
+        @import "../../Build/Cesium/Widgets/widgets.css";
+    </style>
+</head>
+<body>
+<button id="height">高度测量</button>
+<div id="CesiumContainer"></div>
+
+<script>
+    'use strict';
+//美国挺精确，中国有时高度差好多
+//自己加载的dem精度也行，一个tile
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer");
+
+    let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    viewer.terrainProvider=new Cesium.CesiumTerrainProvider({
+        url : "http://localhost:8090/nearestdem",
+    });
+    viewer.camera.flyTo({
+        destination:Cesium.Cartesian3.fromDegrees(128.956,42.34955,20000),
+        duration:5
+    });
+    var entity=undefined;
+    var cartesian3Array=[];
+    document.getElementById('height').onclick=function () {
+        handler.setInputAction(function (move) {
+            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+            if(cartesian){
+                console.log(cartesian);
+                cartesian3Array.push(cartesian);
+                if(entity!==undefined&&cartesian3Array.length===2){
+                    viewer.entities.remove(entity);
+                    entity=addLine(cartesian3Array,
+                        cartesian3Array[parseInt(cartesian3Array.length/2)],
+                        new Cesium.LabelGraphics({
+                        text: calcRelativeHeight(cartesian3Array)[0].toFixed(2)+' m',
+                        scale:0.4
+                    }));
+
+                    reset();
+                    handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                }else {
+                    entity=viewer.entities.add({
+                        position:cartesian3Array[0],
+                        point:new Cesium.PointGraphics({
+                            pixelSize:10,
+                            HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+                        })
+                    })
+                }
+
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    };
+function calcRelativeHeight(cartesian3Array){
+    let heightdiff=[];
+    for(let i=1;i<cartesian3Array.length;++i){
+        heightdiff.push(Math.abs(cartesian3Array[i].z-cartesian3Array[i-1].z));
+    }
+    return heightdiff;
+}
+function addLine(positions,labelPosition,label) {
+    return viewer.entities.add({
+        position:labelPosition,
+        polyline:new Cesium.PolylineGraphics({
+            positions:positions
+        }),
+        label:label
+    });
+}
+/**
+ *将单次画entity清空，以便下次绘画
+ */
+function reset() {
+    entity=undefined;
+    cartesian3Array=[];
+}
+</script>
+</body>
+</html>

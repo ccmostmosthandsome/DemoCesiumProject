@@ -2,6 +2,7 @@
 <!--
 create author 路建成
 date 2018.2.28
+add 判断==改为===
 -->
 <html lang="en">
 <head>
@@ -22,6 +23,7 @@ date 2018.2.28
 </div>
 
 <script>
+    'use strict';
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
 
@@ -43,7 +45,7 @@ date 2018.2.28
      * @param entities Array 要控制entity集合
      */
     function processShowHide(graphicName,isShow,entities) {
-        if(entities==undefined||entities.length==0)return;
+        if(entities===undefined||entities.length===0)return;
 
         for(let i=0;i<entities.length;++i){
             if(graphicName==="Point"){
@@ -74,7 +76,7 @@ date 2018.2.28
      *
      */
     function processShowHideEffcient(graphicName,isShow,entities) {
-        if(entities==undefined||entities.length==0)return;
+        if(entities===undefined||entities.length===0)return;
         //find first polyline and polygon entity index,
         let count=[0,0,0];
 

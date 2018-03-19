@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-
+<!--
+create author 路建成
+date 2018.3.16
+add use strict
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -15,6 +19,7 @@
 <button id="line">线测量</button>
 <div id="CesiumContainer"></div>
 <script>
+    'use strict';
     /*
     * 长度测量，先得到点的坐标，然后转为Web Mercator投影，两个点以上时计算长度
     * 此测量在地理坐标系下无法进行。因为投影坐标系无法确定

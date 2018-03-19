@@ -10,6 +10,8 @@ this is 各个demo的合并版
     <meta charset="UTF-8">
     <title>所有demo 集成到一块</title>
     <script src="../Build/Cesium/Cesium.js"></script>
+    <script src="js/EditorModule.js"></script>
+
     <style>
         @import "common.css";
         @import "../Build/Cesium/Widgets/widgets.css";
@@ -32,7 +34,6 @@ this is 各个demo的合并版
     </style>
 </head>
 <body>
-
 <div id="toolbar">
     <div class="space"></div>
     <div class="showBorder">
@@ -58,19 +59,21 @@ this is 各个demo的合并版
 </div>
 <div id="CesiumContainer"></div>
 <script>
-    //全局高亮设置
-    const HIGHTLIGHTCOLOR=Cesium.Color.RED;
+    'use strict';
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         infobox:false,
         selectionIndicator:false
     });
+    //private var
+
+    Globe._handler_=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    Globe.HIGHTLIGHTCOLOR=Cesium.Color.RED; //全局高亮设置
 
     InitEntityCustomAddFunction();
     InitEntityCategoryShowHide();
     InitFlyToFunction();
     InitEntitySelect();
-
 
     //init
     function InitFlyToFunction() {
@@ -106,6 +109,7 @@ this is 各个demo的合并版
 
     }
     function InitEntityCustomAddFunction() {
+
         const node= document.getElementById("StartDraw");
         node.onclick=function () {
             if(node.innerHTML=="开始绘制"){
@@ -125,11 +129,11 @@ this is 各个demo的合并版
             document.getElementById("point").onclick=function () {
                 //设置inputAction
                 cleanErrorEditData();
-                handler.setInputAction(function (move) {
+                Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     //保持point,polyline,polygon是一致的行为
                     if(cartesian){
-                        entity=addPoint(cartesian);
+                        Globe._entity_=Editor.addPoint(cartesian);
                         reset();
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -138,25 +142,25 @@ this is 各个demo的合并版
             document.getElementById("polyline").onclick=function () {
                 //alert("双击停止绘制");
                 cleanErrorEditData();
-                handler.setInputAction(function (move) {
+                Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian){
-                        cartesian3Array.push(cartesian);
-                        if(entity!==undefined){
-                            viewer.entities.remove(entity);
-                            entity=addLine(cartesian3Array);
+                        Globe._cartesian3Array_.push(cartesian);
+                        if(Globe._entity_!==undefined){
+                            viewer.entities.remove(Globe._entity_);
+                            Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
                         }
                         else {
-                            entity=addPoint(cartesian3Array[0]);
+                            Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                handler.setInputAction(function (move) {
+                Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    if(cartesian&&entity!==undefined){
-                        cartesian3Array.push(cartesian);
-                        viewer.entities.remove(entity);
-                        entity=addLine(cartesian3Array);
+                    if(cartesian&&Globe._entity_!==undefined){
+                        Globe._cartesian3Array_.push(cartesian);
+                        viewer.entities.remove(Globe._entity_);
+                        Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
                         //reset
                         reset();
                     }
@@ -166,37 +170,34 @@ this is 各个demo的合并版
             document.getElementById("polygon").onclick=function () {
                 //alert("双击停止绘制");
                 cleanErrorEditData();
-                handler.setInputAction(function (move) {
+                Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian){
-                        cartesian3Array.push(cartesian);
-                        if(entity!==undefined){
-                            viewer.entities.remove(entity);
-                            if(cartesian3Array.length===2){
-                                entity=addLine(cartesian3Array);
+                        Globe._cartesian3Array_.push(cartesian);
+                        if(Globe._entity_!==undefined){
+                            viewer.entities.remove(Globe._entity_);
+                            if(Globe._cartesian3Array_.length===2){
+                                Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
                             }else{
-                                entity=viewer.entities.add({
-                                    polygon:new Cesium.PolygonGraphics({
-                                        hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
-                                    })
-                                });
+                                Globe._entity_=Editor.addPolygon(
+                                    new Cesium.PolygonHierarchy(Globe._cartesian3Array_)
+                                )
+                              
                             }
                         }
                         else {
-                            entity=addPoint(cartesian3Array[0]);
+                            Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                handler.setInputAction(function (move) {
+                Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    if(cartesian&&entity!==undefined){
-                        cartesian3Array.push(cartesian);
-                        viewer.entities.remove(entity);
-                        entity=viewer.entities.add({
-                            polygon:new Cesium.PolygonGraphics({
-                                hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
-                            })
-                        });
+                    if(cartesian&&Globe._entity_!==undefined){
+                        Globe._cartesian3Array_.push(cartesian);
+                        viewer.entities.remove(Globe._entity_);
+                        Globe._entity_=Editor.addPolygon(
+                                    new Cesium.PolygonHierarchy(Globe._cartesian3Array_)
+                                );
                         //reset
                         reset();
                     }
@@ -229,146 +230,13 @@ this is 各个demo的合并版
                 }
             }
             else{
-                processSelect(pick.id,HIGHTLIGHTCOLOR);
+                processSelect(pick.id,Globe.HIGHTLIGHTCOLOR);
                 //print info
                 console.log(pick.id);
                 //alert(pick.id.attributes.data);
             }
 
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    }
-
-    //EntityCustomAdd global var
-    var entity=undefined;
-    var cartesian3Array=[];
-    let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    //EntityCustomAdd use
-    function addLine(positions) {
-        return viewer.entities.add({
-            polyline:new Cesium.PolylineGraphics({
-                positions:positions
-            })
-        });
-    }
-    function addPoint(position) {
-        return viewer.entities.add({
-            position:position,
-            point:new Cesium.PointGraphics({
-                pixelSize:10
-            })
-        });
-    }
-    function reset() {
-        entity=undefined;
-        cartesian3Array=[];
-    }
-    function cleanErrorEditData() {
-        if(entity!==undefined){
-            viewer.entities.remove(entity);
-            reset();
-        }
-        if(handler!==undefined){
-            handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
-            handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        }
-    }
-
-    //EntityCategoryShowHide use
-    /**
-     * 控制entity显隐 此版本假设集合内为乱序，Point,Polygon,Polygon
-     * @param graphicName entity的category name PointGraphics->Point
-     * @param isShow
-     * @param entities Array 要控制entity集合
-     */
-    function processShowHide(graphicName,isShow,entities) {
-        if(entities==undefined||entities.length==0)return;
-
-        for(let i=0;i<entities.length;++i){
-            if(graphicName==="Point"){
-                if(entities[i].point!==undefined){
-                    entities[i].show=isShow;
-                }
-            }else if(graphicName==="Polyline"){
-                if(entities[i].polyline!==undefined){
-                    entities[i].show=isShow;
-                }
-            }else if(graphicName==="Polygon"){
-                if(entities[i].polygon!==undefined){
-                    entities[i].show=isShow;
-                }
-            }
-        }
-    }
-    function processShowHideEffcient(graphicName,isShow,entities) {
-        if(entities==undefined||entities.length==0)return;
-        //find first polyline and polygon entity index,
-        let count=[0,0,0];
-        for(let i=0;i<entities.length;++i){
-            if(entities[i].point!==undefined){
-                count[0]++;
-            }
-            else if(entities[i].polyline!==undefined){
-                count[1]++;
-            }
-            else if(entities[i].polygon!==undefined){
-                count[2]++;
-            }
-        }
-        if(graphicName==="Point"){
-            for(let i=0;i<count[0];++i){
-                entities[i].show=isShow;
-            }
-        }else if(graphicName==="Polyline"){
-            for(let i=count[0];i<count[1]+count[0];++i){
-                entities[i].show=isShow;
-            }
-        }else if(graphicName==="Polygon"){
-            for(let i=count[1]+count[0];i<entities.length;++i){
-                entities[i].show=isShow;
-            }
-        }
-    }
-    /*
-    此函数假定一个entity只有一个graphic
-    * */
-    function processSelect(entity,color) {
-        if(entity==undefined)return;
-        if(entity.point!==undefined){
-            entity.point.color=color;
-        }else if(entity.polyline!==undefined){
-            entity.polyline.material=color;
-        }else if(entity.polygon!==undefined){
-            entity.polygon.material=color;
-        }
-        /*
-        else if(entity.rectangle!==undefined){
-            entity.rectangle.material=color;
-        }else if(entity.wall!==undefined){
-            entity.wall.material=color;
-        }else if(entity.plane!==undefined){
-            entity.plane.material=color;
-        }else if(entity.path!==undefined){
-            entity.path.material=color;
-        }else if(entity.model!==undefined){
-            entity.model.color=color;
-        }else if(entity.label!==undefined){
-            entity.label.fillColor=color;
-        }else if(entity.ellipsoid!==undefined){
-            entity.ellipsoid.material=color;
-        }else if(entity.ellipse!==undefined){
-            entity.ellipse.material=color;
-        }else if(entity.cylinder!==undefined){
-            entity.cylinder.material=color;
-        }else if(entity.corridor!==undefined){
-            entity.corridor.material=color;
-        }else if(entity.box!==undefined){
-            entity.box.material=color;
-        }else if(entity.billboard!==undefined){
-            entity.billboard.material=color;
-        }else if(entity.polylineVolume!==undefined){
-            entity.polylineVolume.material=color;
-        }
-        */
     }
 </script>
 </body>
