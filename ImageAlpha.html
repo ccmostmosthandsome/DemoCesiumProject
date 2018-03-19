@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!--
+create author 路建成
+date 2018.3.19
+add use strict
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>影像透明</title>
+    <script src="../Build/CesiumUnminified/Cesium.js"></script>
+    <script src="js/EditorModule.js"></script>
+    <style>
+        @import "common.css";
+        @import "../Build/Cesium/Widgets/widgets.css";
+    </style>
+</head>
+<body>
+<div id="toolbar">
+    影像透明度 <input type="range" min="0" max="100" name="alpha" value="100">
+</div>
+<div id="CesiumContainer"></div>
+<script>
+    'use strict';
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer",{
+        baseLayerPicker:false
+    });
+    var imageryLayers=viewer.imageryLayers;
+    const layer=new Cesium.ImageryLayer(
+        new Cesium.ArcGisMapServerImageryProvider({
+            url : 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer'
+        })
+    );
+    imageryLayers.add(layer);
+    const node=document.querySelectorAll('#toolbar input[name="alpha"]')[0];
+
+    node.addEventListener('mousemove',function (evt) {
+        console.log(node.value);
+        layer.alpha=(node.value/100.0);
+    })
+</script>
+</body>
+</html>
