@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<!--
+create author 路建成
+date 2018.3.16
+add use strict
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,6 +22,7 @@
 <div id="CesiumContainer"></div>
 
 <script>
+    'use strict';
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
     let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);

@@ -2,6 +2,7 @@
 <!--
 create author 路建成
 date 2018.2.28
+add use strict
 -->
 <html lang="en">
 <head>
@@ -19,6 +20,7 @@ date 2018.2.28
 <button id="addLine">线添加</button>
 <button id="addPolygon">面添加</button>
 <script>
+    'use strict';
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
     document.getElementById("addPoint").onclick=function () {
