@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<--
+<!--
 create author 路建成
 date 2018.3.19
 add use strict
---!>
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>方位角测量</title>
     <script src="../../Build/Cesium/Cesium.js"></script>
+    <script src="../js/EditorModule.js"></script>
     <style>
         @import "../common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -24,50 +25,39 @@ add use strict
      * 方位角计算
      * 从正北方向开始算，返回方位角
      */
-    //剩下UI
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
     const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     const projection=new Cesium.WebMercatorProjection();
     var entities=[];
-    var cartesian3Array=[];
     document.getElementById('angle').onclick=function () {
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
-                cartesian3Array.push(cartesian);
-                let len=cartesian3Array.length;
+                Globe._cartesian3Array_.push(cartesian);
+                let len=Globe._cartesian3Array_.length;
                 if(len%2===0){
                     //delete
                     viewer.entities.remove(entities[entities.length-1]);
                     entities.pop();
-                    console.log(calcAzimuth(cartesian3Array[len-2],cartesian3Array[len-1]));
-                    let left=generateVerticalLine(cartesian3Array[len-2],cartesian3Array[len-1]);
+                    let left=generateVerticalLine(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]);
                     //画两条线
-                    entities.push(viewer.entities.add({
-                        polyline:new Cesium.PolylineGraphics({
-                            positions:[cartesian3Array[len-2],left]
-                        }),
+                    entities.push(Editor.addLine([Globe._cartesian3Array_[len-2],left],undefined,undefined,{
                         width:5.0
                     }));
-                    entities.push(viewer.entities.add({
-                        position:cartesian3Array[len-2],
-                        polyline:new Cesium.PolylineGraphics({
-                            positions:[cartesian3Array[len-2],cartesian3Array[len-1]]
-                        }),
-                        width:5.0,
-                        label:new Cesium.LabelGraphics({
-                            text:calcAzimuth(cartesian3Array[len-2],cartesian3Array[len-1]).toFixed(2)+'度',
+                    entities.push(Editor.addLine(
+                        [Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]],
+                        Globe._cartesian3Array_[len-2],
+                        new Cesium.LabelGraphics({
+                            text:calcAzimuth(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]).toFixed(2)+'度',
                             scale:0.5
-                        })
-                    }));
+                        }),
+                        {
+                            width:5.0
+                        }
+                    ));
                 }else {
-                    entities.push(viewer.entities.add({
-                        position:cartesian3Array[cartesian3Array.length-1],
-                        point:new Cesium.PointGraphics({
-                            pixelSize:10
-                        })
-                    }));
+                    entities.push(Editor.addPoint(Globe._cartesian3Array_[Globe._cartesian3Array_.length-1]));
                 }
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -108,7 +98,6 @@ add use strict
             }
         }
         return angle;
-
     }
 </script>
 </body>

@@ -1,35 +1,38 @@
 //仅仅能添加点，线，面，可以附带label
 'use strict';
 //根据约定—_*_ do not use
-var Globe={};
+const Globe={};
 Globe._entity_=undefined;
 Globe._cartesian3Array_=[];
 var Editor={
-    addPolygon:function(polygonHierarchy,labelPosition,label) {
+    addPolygon:function(polygonHierarchy,labelPosition,label,props) {
         return viewer.entities.add({
             position: labelPosition,
             polygon: new Cesium.PolygonGraphics({
                 hierarchy: polygonHierarchy
             }),
-            label: label
+            label: label,
+            props
         });
     },
-    addLine:function(positions,labelPosition,label) {
+    addLine:function(positions,labelPosition,label,props) {
         return viewer.entities.add({
             position:labelPosition,
             polyline:new Cesium.PolylineGraphics({
                 positions:positions
             }),
-            label:label
+            label:label,
+            props
         });
     },
-    addPoint:function(position,label) {
+    addPoint:function(position,label,props) {
         return viewer.entities.add({
             position:position,
             point:new Cesium.PointGraphics({
                 pixelSize:10
             }),
-            label:label
+            label:label,
+            props
         });
     }
 
