@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>断面分析,截面分析</title>
+    <script src="../../Build/CesiumUnminified/Cesium.js"></script>
+    <script src="../js/EditorModule.js"></script>
+    <style>
+        @import "../common.css";
+        @import "../../Build/Cesium/Widgets/widgets.css";
+    </style>
+</head>
+<body>
+<buuton id="analysis">横截面分析</buuton>
+<div id="CesiumContainer"></div>
+<script>
+    'use strict';
+    /**
+    1 首先先捕获大于2个点(用户交互添加）
+    2 获取坐标+高度，
+    3 根据两点间距离进行取样高度值（1暂定每隔一定距离 2 疏少，密多）
+    4 根据高度值产生结果
+    */
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer");
+    const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    document.getElementById('analysis').onclick=function () {
+        handler.setInputAction(function (e) {
+            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+            if(cartesian){
+                Globe._cartesian3Array_.push(cartesian);
+                if(Globe._entity_!==undefined){
+                    viewer.entities.remove(Globe._entity_);
+                    Globe._entity_=addLine( Globe._cartesian3Array_);
+                }else{
+                    Globe._entity_=addPoint( Globe._cartesian3Array_[0]);
+                }
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    };
+    function getValueByDistance(){
+      console.log(Globe._cartesian3Array_);
+
+    }
+</script>
+</body>
+</html>

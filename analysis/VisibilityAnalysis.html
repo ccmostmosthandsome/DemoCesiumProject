@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>通视分析，视域分析</title>
+    <script src="../../Build/CesiumUnminified/Cesium.js"></script>
+    <script src="../js/EditorModule.js"></script>
+    <style>
+        @import "../common.css";
+        @import "../../Build/Cesium/Widgets/widgets.css";
+    </style>
+</head>
+<body>
+<div id="CesiumContainer"></div>
+<script>
+    'use strict';
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer",{
+        baseLayerPicker:false
+    });
+</script>
+</body>
+</html>
