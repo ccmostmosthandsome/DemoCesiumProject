@@ -13,5 +13,5 @@ this project is use for demo function
 8. <a href="Measure/LengthMeasure.html">长度测量</a>
 9. <a href="Measure/AreaMeasure.html">面积测量</a>
 10. <a href="Measure/MeasureIntegrated.html">7-9测量合并版</a>
-11. <a href="Measure/LengthMeasure.html">长度测量</a>
+11. <a href="Measure/HeightMeasure.html">高度测量</a>
 12. <a href="Measure/AzimuthMeasure.html">方位角测量</a>
