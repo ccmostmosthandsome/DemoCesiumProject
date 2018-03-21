@@ -73,10 +73,9 @@ add use strict
      */
     function generateVerticalLine(center,end){
         let cartographic=Cesium.Cartographic.fromCartesian(center);
-        var lat,lon;
+        var lon;
         lon=Cesium.Math.toDegrees(cartographic.longitude);
-        lat=Cesium.Math.toDegrees(cartographic.latitude)+5>=90?90:Cesium.Math.toDegrees(cartographic.latitude)+5;
-        console.log(`${lon},${lat}`);
+
         let answer=Cesium.Cartesian3.fromDegrees(lon,90);
 
         return answer;

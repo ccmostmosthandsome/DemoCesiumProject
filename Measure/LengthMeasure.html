@@ -3,12 +3,15 @@
 create author 路建成
 date 2018.3.16
 add use strict
+解决长度量算不正确 ,目前这个算法是WGS84->web mercator->计算距离
+没有考虑跨带问题，可能不精确
 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>距离测量</title>
     <script src="../../Build/Cesium/Cesium.js"></script>
+    <script src="../js/MeasureModule.js"></script>
     <style>
         @import "../common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -29,22 +32,24 @@ add use strict
     let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     var cartesian3Array=[];
     var entity=undefined;
-    const projection=new Cesium.WebMercatorProjection();
+
 
     /**
      * 计算线的长度
      * @param cartesian3Points Array
-     * @returns {number}
+     * @returns {number} 单位m
      */
+
     function calcLength(cartesianPoints) {
+        const projection=new Cesium.WebMercatorProjection();
         var newarray=[];
         for(let i=0;i<cartesianPoints.length;++i){
             let cartographic=Cesium.Cartographic.fromCartesian(cartesianPoints[i]);
-            newarray[i]=projection.project(cartographic);
+            newarray.push(projection.project(cartographic));
         }
-        var answer=0;
+        let answer=0;
         for(let i=1;i<newarray.length;++i){
-            answer+= Math.abs(Cesium.Cartesian3.distanceSquared(newarray[i-1],newarray[i]));
+            answer+=Math.abs(Math.sqrt(Math.pow(newarray[i].x-newarray[i-1].x,2)+Math.pow(newarray[i].y-newarray[i-1].y,2)));
         }
         return answer;
     }
@@ -54,7 +59,8 @@ add use strict
             cartesian3Array.push(cartesian);
             if(cartesian3Array.length>=2){
                 let len=calcLength(cartesian3Array);
-                alert(len.toFixed(2)+ ' m')
+
+                alert(len.toFixed(2)+' m');
             }
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);

@@ -2,18 +2,19 @@
 var Measure={
     /**
      * 计算线的长度
-     * @param cartesian3Points Array
-     * @returns {number}
+     * @param cartesian3Points Array 世界坐标
+     * @returns {number} m
      */
     calcLength:function(cartesianPoints) {
+        const projection=new Cesium.WebMercatorProjection();
         var newarray=[];
         for(let i=0;i<cartesianPoints.length;++i){
             let cartographic=Cesium.Cartographic.fromCartesian(cartesianPoints[i]);
-            newarray[i]=projection.project(cartographic);
+            newarray.push(projection.project(cartographic));
         }
-        var answer=0;
+        let answer=0;
         for(let i=1;i<newarray.length;++i){
-            answer+= Math.abs(Cesium.Cartesian3.distanceSquared(newarray[i-1],newarray[i]));
+            answer+=Math.abs(Math.sqrt(Math.pow(newarray[i].x-newarray[i-1].x,2)+Math.pow(newarray[i].y-newarray[i-1].y,2)));
         }
         return answer;
     },
