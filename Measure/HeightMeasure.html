@@ -48,7 +48,7 @@ add use strict
                             scale:0.35
                         })
                     );
-                    Editor.reset();
+                    reset();
                     handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
                 }else {
                     Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
