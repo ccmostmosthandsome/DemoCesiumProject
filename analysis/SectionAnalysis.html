@@ -3,15 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>断面分析,截面分析</title>
-    <script src="../../Build/CesiumUnminified/Cesium.js"></script>
+    <script src="../../Build/Cesium/Cesium.js"></script>
     <script src="../js/EditorModule.js"></script>
+    <script src="../js/echarts.js"></script>
     <style>
         @import "../common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
+        #echarts{
+            float: right;
+            width:40%;
+            height: 100%;
+        }
+        #CesiumContainer{
+
+            width:60%;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
-<buuton id="analysis">横截面分析</buuton>
+
+<button id="analysis">横截面分析</button>
+<div id="echarts"></div>
 <div id="CesiumContainer"></div>
 <script>
     'use strict';
@@ -21,26 +34,131 @@
     3 根据两点间距离进行取样高度值（1暂定每隔一定距离 2 疏少，密多）
     4 根据高度值产生结果
     */
+    /**
+     * 0 获得取样点时获得所有点的世界坐标
+     * 1 将取样的世界坐标-》WGS84坐标
+     * 2 根据取样的WGS84坐标，
+     * 3 根据高度拟合成图形，ok
+     */
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
+    viewer.terrainProvider=new Cesium.createWorldTerrain();
+
     const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+    var objsdata=[];
+    var analysisEntity=[];
+    /**
+     * let obj={
+            longtitude:cartographic.longitude,//弧度经度
+            latitude:cartographic.latitude,//弧度纬度
+            //查不到为undefined->0，单位为M
+            height:wgs84globe.getHeight(cartographic)
+       }
+     * @param positions 世界坐标
+     * @return Array[obj]
+     */
+    function InterpolationByGetValue(startpos,endpos) {
+        const wgs84globe=viewer.scene.globe;
+        var answer=[];//存obj
+
+        const maxx=10,maxy=10;
+        const LIMIT=maxx*maxy;
+        const xInterval=Math.abs(startpos.x-endpos.x)/maxx;
+        const yInterval=Math.abs(startpos.y-endpos.y)/maxy;
+        while(Math.abs(startpos.x-endpos.x)>0&&Math.abs(startpos.y-endpos.y)>0){
+            let cartographic=Cesium.Cartographic.fromCartesian(startpos);
+            var obj={
+                longtitude:cartographic.longitude,
+                latitude:cartographic.latitude,
+                height:wgs84globe.getHeight(cartographic)===undefined?0:wgs84globe.getHeight(cartographic)
+            };
+            answer.push(obj);
+            if(answer.length>LIMIT){
+                break;
+            }
+            //步进
+            if(startpos.x-endpos.x>0){
+                startpos.x-=xInterval;
+            }else if(startpos.x-endpos.x<0){
+                startpos.x+=xInterval;
+            }
+            if(startpos.y-endpos.y>0){
+                startpos.y-=yInterval;
+            }else if(startpos.y-endpos.y<0){
+                startpos.y+=yInterval;
+            }
+        }
+
+        return answer;
+    }
+
     document.getElementById('analysis').onclick=function () {
-        handler.setInputAction(function (e) {
+        handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
                 Globe._cartesian3Array_.push(cartesian);
-                if(Globe._entity_!==undefined){
-                    viewer.entities.remove(Globe._entity_);
-                    Globe._entity_=addLine( Globe._cartesian3Array_);
-                }else{
-                    Globe._entity_=addPoint( Globe._cartesian3Array_[0]);
+                if(Globe._cartesian3Array_.length>=2){
+                    let len=Globe._cartesian3Array_.length;
+                    objsdata=objsdata.concat(InterpolationByGetValue(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]));
                 }
+                let entity=viewer.entities.add({
+                    position:Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude),
+                    point:new Cesium.PointGraphics({
+                        pixelSize:10
+                    }),
+                    label:new Cesium.LabelGraphics({
+                        text:''+Globe._cartesian3Array_.length,
+                        scale:0.5
+                    })
+                });
+                analysisEntity.push(entity);
+
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    };
-    function getValueByDistance(){
-      console.log(Globe._cartesian3Array_);
+        handler.setInputAction(function (e) {
+            //结束事件
+            handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+            handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+            //开始分析，这应该是一个耗时的操作
+            let min=objsdata[0].height;
+            for(let i=0;i<objsdata.length;++i){
+                if(min>objsdata[i].height){
+                    min=objsdata[i].height;
+                }
+            }
 
+            buildCharts(objsdata,min.toFixed(0));
+
+            console.log(objsdata);
+            objsdata=[];
+            Globe._cartesian3Array_=[];
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+    };
+    function buildCharts(objsdata,min){
+
+        var mycharts=echarts.init(document.getElementById('echarts'));
+        var option={
+            title:{
+                text:'地形剖面'
+            },
+            xAxis:{
+                type:'category'
+            },
+            yAxis:{
+                type:'value',
+                smooth:true,
+                min:min
+                //scale:true,
+            },
+            series:[{
+                data:objsdata.map(function(res){
+                    return res.height;
+                }),
+                type:'line'
+            }]
+        };
+        mycharts.setOption(option);
     }
 </script>
 </body>
