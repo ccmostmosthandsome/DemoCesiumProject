@@ -14,3 +14,5 @@ this project is use for demo function
 1. <a href="Measure/AreaMeasure.html">面积测量</a>
 1. <a href="Measure/HeightMeasure.html">高度测量</a>
 1. <a href="Measure/AzimuthMeasure.html">方位角测量</a>
+1. <a href="Measure/MeasureIntegrated.html">7-12测量合并版</a>
+1. <a href="ImageAlpha.html">影像透明</a>
