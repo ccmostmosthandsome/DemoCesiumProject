@@ -9,6 +9,7 @@ add use strict
 simple refactor this page and use EditorModule.js ,MeasureModule.js
 to simple package function
 
+将doubleclick结束改为rightclick结束
 -->
 <html lang="en">
 <head>
@@ -85,24 +86,15 @@ to simple package function
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian&&Globe._entity_!==undefined){
-                Globe._cartesian3Array_.push(cartesian);
-                viewer.entities.remove(Globe._entity_);
-                Globe._entity_=Editor.addLine(Globe._cartesian3Array_,Globe._cartesian3Array_[parseInt(Globe._cartesian3Array_.length/2)],new Cesium.LabelGraphics({
-                    text:Measure.calcLength(Globe._cartesian3Array_).toFixed(2)+' m',
-                    scale:0.35
-                }));
-                //加入计算结果中，以便删除
-                measureEntities.push(Globe._entity_);
-                updateClearMeasureButton();
+            //加入计算结果中，以便删除
+            measureEntities.push(Globe._entity_);
+            updateClearMeasureButton();
 
-                reset();
-                Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
-                Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+            reset();
+            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+ 
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
     };
     //采用第一个是点，第二个便是线，三+就是面
     document.getElementById("area").onclick=function () {
@@ -131,27 +123,16 @@ to simple package function
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian&&Globe._entity_!==undefined){
-                Globe._cartesian3Array_.push(cartesian);
-                viewer.entities.remove(Globe._entity_);
-                Globe._entity_=Editor.addPolygon(
-                    new Cesium.PolygonHierarchy(Globe._cartesian3Array_),
-                    Globe._cartesian3Array_[parseInt(Globe._cartesian3Array_.length/2)],
-                    new Cesium.LabelGraphics({
-                        text:Measure.calcArea(Globe._cartesian3Array_).toFixed(2)+' m^2',
-                        scale:0.35
-                    }));
-                //加入计算结果中，以便删除
-                measureEntities.push(Globe._entity_);
-                updateClearMeasureButton();
-                //reset
-                reset();
-                Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
-                Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+           
+            //加入计算结果中，以便删除
+            measureEntities.push(Globe._entity_);
+            updateClearMeasureButton();
+            //reset
+            reset();
+            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+ 
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
     };
 
     document.getElementById('Azimuth').onclick=function () {
@@ -234,7 +215,7 @@ to simple package function
             reset();
         }
         if(Globe._handler_!==undefined){
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
             Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
         }
     }
@@ -244,7 +225,7 @@ to simple package function
             reset();
         }
         if(Globe._handler_!==undefined){
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
             Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
         }
         for(let i=0;i<measureEntities.length;++i){
