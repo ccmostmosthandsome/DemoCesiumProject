@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+create author 路建成
+date 2018.3.23
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +18,29 @@
 <div id="CesiumContainer"></div>
 <script>
     'use strict';
+    /**
+     * 在做此功能前 先做两点间的可见性会比较好
+     * 两点间A,B可见性用建立射线 ax+by+c=0,斜率为k,在A，B点范围内，A(x1,y1,z1),B(x2,y2,z2)
+     * 
+    <code>
+        rad=Math.atan(len(x1,y1,x2,y2)/Math.abs(z2-z1))；
+        if(z2>z1)rad+=Math.PI/2.0;
+    </code>
+    rad越大才能看到到
+    存储结构
+    <code>
+        obj={
+            (x,y),//x=>（x1,x2）y=>(y1,y2)
+            rad
+        };
+    </code>
+    由近及远从observer->target
+
+    圆面的可见性：
+    1 指定 中心点和半径
+    2 从中心点扩散取样分析可见性 怎么取样？？？ 
+    3 按照预定的规则画出可见与不可见区域
+     */
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         baseLayerPicker:false
