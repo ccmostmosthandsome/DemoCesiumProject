@@ -3,14 +3,13 @@
  * @param {Array} positions 
  * @param {Cesium.Globe} globe 
  */
-function WorldCoord2WebMercatorCoord(positions,globe){
-    if(Array.isArray(positions)){
+function WorldCoord2WebMercatorCoordWithHeight(positions,globe){
+    if(!Array.isArray(positions)){
         throw new Error("position is not array");
     }
     if(globe===undefined){
         throw new Error("you must input globe param");
     }
-    let len=positions.len;
     var arr=[];
     const projection=new Cesium.WebMercatorProjection();
     const wgs84globe=globe;
