@@ -24,6 +24,7 @@
 <body>
 
 <button id="analysis">横截面分析</button>
+<button id="clearResult">清空分析结果</button>
 <div id="echarts"></div>
 <div id="CesiumContainer"></div>
 <script>
@@ -103,7 +104,7 @@
                     objsdata=objsdata.concat(InterpolationByGetValue(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]));
                 }
                 let entity=viewer.entities.add({
-                    position:Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude),
+                    position:cartesian,
                     point:new Cesium.PointGraphics({
                         pixelSize:10
                     }),
@@ -135,6 +136,9 @@
             Globe._cartesian3Array_=[];
         }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
     };
+    document.getElementById('clearResult').onclick=function(){
+        document.getElementById('echarts').innerHTML="";
+    }
     function buildCharts(objsdata,min){
 
         var mycharts=echarts.init(document.getElementById('echarts'));
