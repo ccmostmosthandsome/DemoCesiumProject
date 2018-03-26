@@ -1,4 +1,6 @@
 #Intellij 
 .idea
-# echarts 百度地图js
-# /js/echarts*.js
+# echarts 百度地图js,require.js
+js/lib/
+#vscode文件
+.vscode

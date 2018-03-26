@@ -10,9 +10,8 @@ add use strict
     <title>点位测量</title>
     <script src="../../Build/Cesium/Cesium.js"></script>
     <style>
-        @import "../common.css";
+        @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
-
     </style>
 </head>
 <body>
@@ -33,7 +32,6 @@ add use strict
             if(cartesian){
                 let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
                 //可能需要东西经，南北纬
-
                 let longtitude=Cesium.Math.toDegrees(cartographic.longitude);
                 let latitude=Cesium.Math.toDegrees(cartographic.latitude);
                 //
@@ -56,7 +54,6 @@ add use strict
                         text:str,
                         scale:0.35,
                         pixelOffset:new Cesium.Cartesian2(10,-10)//右上角偏移
-
                     })
                 });
                 tempEntities.push(temp);
@@ -65,7 +62,6 @@ add use strict
     };
     document.getElementById('Stop').onclick=function () {
       clearTempData();
-
     };
     function clearTempData() {
         handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
