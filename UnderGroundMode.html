@@ -18,10 +18,43 @@ date 2018.3.23
 <div id="CesiumContainer"></div>
 <script>
     'use strict';
+    /**
+     * 地下模式 所有物体必须采用Primitive API 用entity API高度作用很小
+     * 怎么说那，设置高度后，比如明明在地上的物体，在地下也能看见
+     * 高度无论正负，只要在地下模式，用entity API 的全部一个样
+     */
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         baseLayerPicker:false
     });
+
+    var camera=viewer.camera;
+    var scene=viewer.scene;
+    camera.changed.addEventListener(function (evt) {
+        console.log('new ');
+        console.log(Cesium.Math.toDegrees(camera.heading));
+        console.log(Cesium.Math.toDegrees(camera.pitch));
+        console.log(Cesium.Math.toDegrees(camera.roll));
+    });
+
+    document.getElementById('enableUnderGround').onclick=function(){
+        //摄像头与地形Collision检测
+        viewer.scene.screenSpaceCameraController.enableCollisionDetection=false;
+
+        var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(
+            Cesium.Cartesian3.fromDegrees(-75.62898254394531, 40.02804946899414, -5000));
+        var model = scene.primitives.add(Cesium.Model.fromGltf({
+            url : '../Apps/SampleData/models/CesiumGround/Cesium_Ground.gltf',
+            modelMatrix : modelMatrix,
+            scale : 200.0
+        }));
+
+    };
+    document.getElementById('fly').onclick=function(){
+        camera.flyTo({
+            destination:Cesium.Cartesian3.fromDegrees(-75.62898254394531, 40.02804946899414,-50)
+        })
+    }
 </script>
 </body>
 </html>
