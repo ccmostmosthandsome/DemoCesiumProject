@@ -27,13 +27,13 @@ add use strict
         let point=viewer.entities.add({
             id:"point entity",
             name:"测试点",
-            position:Cesium.Cartesian3.fromDegrees(100,40,1000),
+            position:Cesium.Cartesian3.fromDegrees(100,40,100),
             point:new Cesium.PointGraphics({
                 color:Cesium.Color.YELLOW,
                 outlineColor:Cesium.Color.GREEN,
                 outlineWidth:5.0,
                 pixelSize:10,
-                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+                HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
             })
         });
         viewer.flyTo(point,{

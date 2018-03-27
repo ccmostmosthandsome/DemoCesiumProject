@@ -126,7 +126,8 @@ add use strict
         return viewer.entities.add({
             position:position,
             point:new Cesium.PointGraphics({
-                pixelSize:10
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
             })
         });
     }
