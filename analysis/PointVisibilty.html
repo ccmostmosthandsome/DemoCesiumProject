@@ -11,6 +11,7 @@ date 2018.3.23
     <script src="../js/EditorModule.js"></script>
     <script src="../js/MeasureModule.js"></script>
     <script src="../js/CesiumUtil.js"></script>
+    <script src="../js/anlysis.js"></script>
     <style>
         @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -41,7 +42,7 @@ date 2018.3.23
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         baseLayerPicker:false,
-        terrainProvider:new Cesium.createWorldTerrain()
+        //terrainProvider:new Cesium.createWorldTerrain()
     });
     const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     var measureEntities=[];
@@ -49,12 +50,8 @@ date 2018.3.23
         handler.setInputAction(function(move){
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
-                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
                 Globe._cartesian3Array_.push(cartesian);
-                Globe._entity_=Editor.addPoint(Cesium.Cartesian3.fromRadians(
-                    cartographic.longitude,
-                    cartographic.latitude
-                ));
+                Globe._entity_=Editor.addPoint(cartesian);
                 measureEntities.push(Globe._entity_);
                 //
                 if(Globe._cartesian3Array_.length===2){
@@ -66,7 +63,7 @@ date 2018.3.23
        
     };
     document.getElementById('clearResult').onclick=function(){
-        if(measureEntities.length!=0){
+        if(measureEntities.length!==0){
             for(let entity of measureEntities){
                 viewer.entities.remove(entity)
             }
@@ -76,12 +73,13 @@ date 2018.3.23
         }
     };
     /**
-     * cartesian3Array @type Array
+     * cartesian3Array @type Array 世界坐标
+     *
      */ 
     function process(cartesian3Array){
         var arr=[];
         const wgs84globe=viewer.scene.globe;
-        for(var cartesian of cartesian3Array){
+        for(let cartesian of cartesian3Array){
             let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
             arr.push({
                 x:cartesian.x,
@@ -89,74 +87,44 @@ date 2018.3.23
                 z:wgs84globe.getHeight(cartographic)===undefined?0:wgs84globe.getHeight(cartographic)
             });
         }
-        var radAB=getRad(arr[0],arr[1]);
-        console.log(radAB);
+        var radAB=getRad(arr[0],arr[1],wgs84globe);
+        console.log(radAB*180/Math.PI);
         var a=WorldCoord2WebMercatorCoordWithHeight(cartesian3Array,wgs84globe);
         let [startPoint,endPoint]=[a[0],a[1]];
         var answer=InterpolationByGetValue(startPoint,endPoint);
         for(let i=1;i<answer.length;++i){
-            let [start,end]=[Cesium.Cartesian3.fromRadians(answer[i-1].longtitude,answer[i-1].latitude,answer[i-1].height),
-            Cesium.Cartesian3.fromRadians(answer[i].longtitude,answer[i].latitude,answer[i].height)];
-            let radAC=getRad(start,end);
-            if(radAC>radAB){
-                console.log(`$(start),$(end) ,$(radAC)`);
-                console.log("false");
+            let [start,end]=[arr[0],
+            Cesium.Cartesian3.fromRadians(answer[i].longitude,answer[i].latitude,answer[i].height)];
+            let radAC=getRad(start,end,wgs84globe);
+            console.log("RadAX"+(radAC*180/Math.PI));
+            if(radAC<radAB){
+                //console.log("false"+(radAC*180/Math.PI));
+                alert('false');
                 return false;
             }
         }
         console.log("OK ");
+        alert('Ok');
         return true;
     }
     /**
-     * startPoint,endPoint Cartesain3类型 世界坐标系
-     * 要有高程
-     */ 
-    function getRad(startPoint,endPoint){
+     * @desc 根据startPoint,endPoint计算两点及startpoint 垂直的地面点的tan角度
+     * @param startPoint 世界坐标
+     * @param endPoint   世界坐标
+     * @param globe 用于获得高程所需的椭球体
+     * @returns {rad}弧度形式
+     */
+    function getRad(startPoint,endPoint,globe){
         let cartesian3Arr=[startPoint,endPoint];
-        let len=Measure.calcLength(cartesian3Arr,viewer.scene.globe);
+        let len=Measure.calcLength(cartesian3Arr);
 
-        let arr=WorldCoord2WebMercatorCoordWithHeight(cartesian3Arr,viewer.scene.globe);
+        let arr=WorldCoord2WebMercatorCoordWithHeight(cartesian3Arr,globe);
         let [startpos,endpos]=[arr[0],arr[1]];
         let rad=Math.atan(len/Math.abs(startpos.z-endpos.z));
         if(endpos.z>startpos.z){
             rad+=Math.PI/2.0;
         }
-        return rad;    
-    }
-    //插值算法要改进！！！
-    function InterpolationByGetValue(startpos,endpos) {
-        const wgs84globe=viewer.scene.globe;
-        var answer=[];//存obj
-
-        const maxx=10,maxy=10;
-        const LIMIT=maxx*maxy;
-        const xInterval=Math.abs(startpos.x-endpos.x)/maxx;
-        const yInterval=Math.abs(startpos.y-endpos.y)/maxy;
-        while(Math.abs(startpos.x-endpos.x)>0&&Math.abs(startpos.y-endpos.y)>0){
-            let cartographic=Cesium.Cartographic.fromCartesian(startpos);
-            var obj={
-                longtitude:cartographic.longitude,
-                latitude:cartographic.latitude,
-                height:wgs84globe.getHeight(cartographic)===undefined?0:wgs84globe.getHeight(cartographic)
-            };
-            answer.push(obj);
-            if(answer.length>LIMIT){
-                break;
-            }
-            //步进
-            if(startpos.x-endpos.x>0){
-                startpos.x-=xInterval;
-            }else if(startpos.x-endpos.x<0){
-                startpos.x+=xInterval;
-            }
-            if(startpos.y-endpos.y>0){
-                startpos.y-=yInterval;
-            }else if(startpos.y-endpos.y<0){
-                startpos.y+=yInterval;
-            }
-        }
-
-        return answer;
+        return rad;
     }
 </script>
 </body>
