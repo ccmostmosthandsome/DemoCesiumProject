@@ -42,7 +42,7 @@ date 2018.3.23
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         baseLayerPicker:false,
-        //terrainProvider:new Cesium.createWorldTerrain()
+        terrainProvider:new Cesium.createWorldTerrain()
     });
     const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     var measureEntities=[];
@@ -90,8 +90,19 @@ date 2018.3.23
         var radAB=getRad(arr[0],arr[1],wgs84globe);
         console.log(radAB*180/Math.PI);
         var a=WorldCoord2WebMercatorCoordWithHeight(cartesian3Array,wgs84globe);
-        let [startPoint,endPoint]=[a[0],a[1]];
-        var answer=InterpolationByGetValue(startPoint,endPoint);
+        
+        var answer=InterpolationByGetValue(a[0],a[1],viewer.scene.globe);
+        //verify interpolation is correct
+        for(let i=0;i<answer.length;++i){
+            viewer.entities.add({
+                poisition:Cesium.Cartesian3.fromRadians(answer[i].longitude,answer[i].latitude,answer[i].height),
+                point:new Cesium.PointGraphics({
+                    pixelSize:10,
+                    HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
+                    color:Cesium.Color.YELLOW
+                })
+            })
+        }
         for(let i=1;i<answer.length;++i){
             let [start,end]=[arr[0],
             Cesium.Cartesian3.fromRadians(answer[i].longitude,answer[i].latitude,answer[i].height)];
@@ -126,6 +137,50 @@ date 2018.3.23
         }
         return rad;
     }
+
+    /**
+     *
+     * @param startpos 投影坐标
+     * @param endpos 投影坐标
+     * @param maxx
+     * @param maxy
+     * @returns {Array} WGS84坐标radians
+     */
+    function InterpolationByGetValue(startpos,endpos,maxx,maxy,globe) {
+        const webmercatorProjection=new Cesium.WebMercatorProjection();
+        const wgs84globe=globe;
+        var answer=[];//存obj
+
+        const maxX=maxx||10,maxY=maxy||10;
+        const LIMIT=maxX*maxY;
+        const xInterval=Math.abs(startpos.x-endpos.x)/maxX;
+        const yInterval=Math.abs(startpos.y-endpos.y)/maxY;
+        while(Math.abs(startpos.x-endpos.x)>0&&Math.abs(startpos.y-endpos.y)>0){
+            let cartographic=webmercatorProjection.unproject(startpos);
+            var obj={
+                longitude:cartographic.longitude,
+                latitude:cartographic.latitude,
+                height:wgs84globe.getHeight(cartographic)===undefined?0:wgs84globe.getHeight(cartographic)
+            };
+            answer.push(obj);
+            if(answer.length>LIMIT){
+                break;
+            }
+            //步进
+            if(startpos.x-endpos.x>0){
+                startpos.x-=xInterval;
+            }else if(startpos.x-endpos.x<0){
+                startpos.x+=xInterval;
+            }
+            if(startpos.y-endpos.y>0){
+                startpos.y-=yInterval;
+            }else if(startpos.y-endpos.y<0){
+                startpos.y+=yInterval;
+            }
+        }
+        return answer;
+    }
+
 </script>
 </body>
 </html>
