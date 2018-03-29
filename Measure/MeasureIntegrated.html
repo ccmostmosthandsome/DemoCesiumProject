@@ -19,7 +19,7 @@ to simple package function
     <script src="../js/EditorModule.js"></script>
     <script src="../js/MeasureModule.js"></script>
     <style>
-        @import "../common.css";
+        @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
     </style>
 </head>
@@ -36,13 +36,8 @@ to simple package function
 
 <script>
     'use strict';
-
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
-    //用于点，线，面的创建
-    //private var
-    //EntityCustomAdd global var
-    
     Globe._handler_=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     viewer.terrainProvider=new Cesium.createWorldTerrain();
     const projection=new Cesium.WebMercatorProjection();

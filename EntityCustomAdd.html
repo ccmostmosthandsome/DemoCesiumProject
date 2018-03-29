@@ -12,7 +12,7 @@ add use strict
     <script src="../Build/Cesium/Cesium.js"></script>
     <style>
         @import "../Build/Cesium/Widgets/widgets.css";
-        @import "common.css";
+        @import "css/common.css";
     </style>
 </head>
 <body>
@@ -126,7 +126,8 @@ add use strict
         return viewer.entities.add({
             position:position,
             point:new Cesium.PointGraphics({
-                pixelSize:10
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
             })
         });
     }

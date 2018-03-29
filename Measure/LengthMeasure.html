@@ -13,7 +13,7 @@ add use strict
     <script src="../../Build/Cesium/Cesium.js"></script>
     <script src="../js/MeasureModule.js"></script>
     <style>
-        @import "../common.css";
+        @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
     </style>
 </head>
@@ -31,15 +31,11 @@ add use strict
     const viewer=new Cesium.Viewer("CesiumContainer");
     let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     var cartesian3Array=[];
-    var entity=undefined;
-
-
     /**
      * 计算线的长度
      * @param cartesian3Points Array
      * @returns {number} 单位m
      */
-
     function calcLength(cartesianPoints) {
         const projection=new Cesium.WebMercatorProjection();
         var newarray=[];
