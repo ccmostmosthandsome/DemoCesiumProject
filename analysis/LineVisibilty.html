@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>两点连线可见性</title>
+    <script src="../../Build/Cesium/Cesium.js"></script>
+    <script src="../js/EditorModule.js"></script>
+    <script src="../js/MeasureModule.js"></script>
+    <script src="../js/CesiumUtil.js"></script>
+    <style>
+        @import "../common.css";
+        @import "../../Build/Cesium/Widgets/widgets.css";
+    </style>
+</head>
+<body>
+<button id="PointVisibility">两点间可见性分析</button>
+<button id="clearResult">清空分析结果</button>
+<div id="CesiumContainer"></div>
+<script>
+    'use strict';
+    /**
+     *
+     * 两点间A,B可见性用建立射线 ax+by+c=0,斜率为k,在A，B点范围内，A(x1,y1,z1),B(x2,y2,z2)
+     *
+     <code>
+     rad=Math.atan(len(x1,y1,x2,y2)/Math.abs(z2-z1))；
+     if(z2>z1)rad+=Math.PI/2.0;
+     </code>
+     rad越大才能看到
+     由近及远从observer->target
+
+     步骤
+     1 通过用户交互获得两个点A,B
+     2 获得A，B两点的地理坐标，高程，radAB
+     3 按照逼近原理，从A->B逼近，依次取值获得A,C rad来，如果radAB<radAC则看不到
+     */
+    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+    const viewer=new Cesium.Viewer("CesiumContainer",{
+        baseLayerPicker:false,
+        terrainProvider:new Cesium.createWorldTerrain()
+    });
+    const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    var measureEntities=[];
+    document.getElementById('PointVisibility').onclick=function(){
+        handler.setInputAction(function(move){
+            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+            if(cartesian){
+                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
+                Globe._cartesian3Array_.push(cartesian);
+                if(Globe._cartesian3Array_.length===1){
+                    Globe._entity_=Editor.addPoint(Cesium.Cartesian3.fromRadians(
+                        cartographic.longitude,
+                        cartographic.latitude
+                    ));
+                }else if(Globe._cartesian3Array_.length===2){
+
+                    viewer.entities.remove(Globe._entity_);
+                    handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                    let objData=process(Globe._cartesian3Array_);
+                    measureEntities=measureEntities.concat(drawLine(objData,Globe._cartesian3Array_[0],Globe._cartesian3Array_[1]));
+                }
+            }
+        },Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    };
+    document.getElementById('clearResult').onclick=function(){
+        if(measureEntities.length!==0){
+            for(let entity of measureEntities){
+                viewer.entities.remove(entity)
+            }
+            measureEntities=[];
+            Globe._entity_=undefined;
+            Globe._cartesian3Array_=[];
+        }
+    };
+    /**
+     * cartesian3Array @type Array
+     */
+    function process(cartesian3Array){
+        var arr=[];
+        const wgs84globe=viewer.scene.globe;
+        for(var cartesian of cartesian3Array){
+            let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
+            arr.push({
+                x:cartesian.x,
+                y:cartesian.y,
+                z:wgs84globe.getHeight(cartographic)===undefined?0:wgs84globe.getHeight(cartographic)
+            });
+        }
+        //var radAB=getRad(arr[0],arr[1]);
+        var a=WorldCoord2WebMercatorCoordWithHeight(cartesian3Array,wgs84globe);
+
+        var answer=InterpolationByGetValue(a[0],a[1]);
+
+        var objData=[];
+        var maxRad=0;
+        for(let i=1;i<answer.length;++i){
+            let end= Cesium.Cartesian3.fromRadians(answer[i].longitude,answer[i].latitude,answer[i].height);
+            let radAC=getRad(arr[0],end);
+            if(radAC>maxRad){
+                objData.push({
+                    position:end,
+                    visible:true
+                });
+                maxRad=radAC;
+            }else{
+                objData.push({
+                    position:end,
+                    visible:false
+                });
+            }
+        }
+        //console.log("OK ");
+
+        return objData;
+    }
+    /**
+     * objData {
+     *  position:cartesian3
+     *  visible:boolean
+     * }
+     *
+     * 1 for performance 先进行数据的合并，即将相邻的true,false合并
+     * 2 根据合并的数据进行画线
+     */
+    function drawLine(objData,startPosition){
+        var mergeArray=[];
+        var entities=[];
+        mergeArray.push(objData[0]);
+        let j=0;
+        for(let i=1;i<objData.length;++i){
+            if(objData[i-1].visible===objData[i].visible){
+                j++;
+                mergeArray[i-j].position=objData[i].position;
+
+            }else{
+                mergeArray.push(objData[i]);
+            }
+        }
+        console.log(mergeArray);
+
+        const InVisibleMaterial=new Cesium.ColorMaterialProperty(Cesium.Color.RED);
+        const VisibleMaterial=new Cesium.ColorMaterialProperty(Cesium.Color.GREEN);
+
+        entities.push(viewer.entities.add({
+            polyline: new Cesium.PolylineGraphics({
+                positions: [startPosition, mergeArray[0].position],
+               // material:mergeArray[0].visible?VisibleMaterial:InVisibleMaterial
+            })
+        }));
+
+        for(let i=1;i<mergeArray.length;i++){
+            entities.push(viewer.entities.add({
+                polyline: new Cesium.PolylineGraphics({
+                    positions: [mergeArray[i - 1].position, mergeArray[i].position],
+                   // material:mergeArray[i].visible?VisibleMaterial:InVisibleMaterial
+                })
+            }));
+        };
+        console.log(entities.length);
+        return entities;
+    }
+    /**
+     * startPoint,endPoint Cartesain3类型 世界坐标系
+     * 要有高程
+     */
+    function getRad(startPoint,endPoint){
+        let cartesian3Arr=[startPoint,endPoint];
+        let len=Measure.calcLength(cartesian3Arr,viewer.scene.globe);
+
+        let arr=WorldCoord2WebMercatorCoordWithHeight(cartesian3Arr,viewer.scene.globe);
+        let [startpos,endpos]=[arr[0],arr[1]];
+        let rad=Math.atan(len/Math.abs(startpos.z-endpos.z));
+        if(endpos.z>startpos.z){
+            rad+=Math.PI/2.0;
+        }
+        return rad;
+    }
+    //插值算法要改进！！！
+    function InterpolationByGetValue(startpos,endpos) {
+        const wgs84globe=viewer.scene.globe;
+        var answer=[];//存obj
+        const maxx=10,maxy=10;
+        const LIMIT=maxx*maxy;
+        const xInterval=Math.abs(startpos.x-endpos.x)/maxx;
+        const yInterval=Math.abs(startpos.y-endpos.y)/maxy;
+        while(Math.abs(startpos.x-endpos.x)>0&&Math.abs(startpos.y-endpos.y)>0){
+            let cartographic=Cesium.Cartographic.fromCartesian(startpos);
+            var obj={
+                longitude:cartographic.longitude,
+                latitude:cartographic.latitude,
+                height:wgs84globe.getHeight(cartographic)===undefined?0:wgs84globe.getHeight(cartographic)
+            };
+            answer.push(obj);
+            if(answer.length>LIMIT){
+                break;
+            }
+            //步进
+            if(startpos.x-endpos.x>0){
+                startpos.x-=xInterval;
+            }else if(startpos.x-endpos.x<0){
+                startpos.x+=xInterval;
+            }
+            if(startpos.y-endpos.y>0){
+                startpos.y-=yInterval;
+            }else if(startpos.y-endpos.y<0){
+                startpos.y+=yInterval;
+            }
+        }
+        return answer;
+    }
+</script>
+</body>
+</html>
