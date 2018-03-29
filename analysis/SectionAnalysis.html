@@ -9,7 +9,7 @@ date 2018.3.23
     <title>断面分析,截面分析</title>
     <script src="../../Build/Cesium/Cesium.js"></script>
     <script src="../js/EditorModule.js"></script>
-    <script src="../js/echarts.js"></script>
+    <script src="../js/lib/echarts.js"></script>
     <style>
         @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -52,6 +52,7 @@ date 2018.3.23
 
     var objsdata=[];
     var analysisEntity=[];
+    var mycharts=undefined;
     /**
      * let obj={
             longtitude:cartographic.longitude,//弧度经度
@@ -62,11 +63,11 @@ date 2018.3.23
      * @param positions 世界坐标
      * @return Array[obj]
      */
-    function InterpolationByGetValue(startpos,endpos) {
-        const wgs84globe=viewer.scene.globe;
+    function InterpolationByGetValue(startpos,endpos,maxX,maxY,globe) {
+        const wgs84globe=globe;
         var answer=[];//存obj
 
-        const maxx=10,maxy=10;
+        const maxx=maxX||10,maxy=maxY||10;
         const LIMIT=maxx*maxy;
         const xInterval=Math.abs(startpos.x-endpos.x)/maxx;
         const yInterval=Math.abs(startpos.y-endpos.y)/maxy;
@@ -104,18 +105,13 @@ date 2018.3.23
                 Globe._cartesian3Array_.push(cartesian);
                 if(Globe._cartesian3Array_.length>=2){
                     let len=Globe._cartesian3Array_.length;
-                    objsdata=objsdata.concat(InterpolationByGetValue(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]));
+                    objsdata=objsdata.concat(InterpolationByGetValue(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1],10,10,viewer.scene.globe));
                 }
-                let entity=viewer.entities.add({
-                    position:cartesian,
-                    point:new Cesium.PointGraphics({
-                        pixelSize:10
-                    }),
-                    label:new Cesium.LabelGraphics({
-                        text:''+Globe._cartesian3Array_.length,
-                        scale:0.5
-                    })
-                });
+                let entity=Editor.addPoint(cartesian,new Cesium.LabelGraphics({
+                    text:''+Globe._cartesian3Array_.length,
+                    scale:0.5
+                }));
+
                 analysisEntity.push(entity);
 
             }
@@ -126,11 +122,12 @@ date 2018.3.23
             handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
             //开始分析，这应该是一个耗时的操作
             let min=objsdata[0].height;
-            for(let i=0;i<objsdata.length;++i){
-                if(min>objsdata[i].height){
-                    min=objsdata[i].height;
+            objsdata.map(function(val){
+                if(min>val.height){
+                    min=val.height;
                 }
-            }
+            })
+
 
             buildCharts(objsdata,min.toFixed(0));
 
@@ -140,11 +137,17 @@ date 2018.3.23
         }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
     };
     document.getElementById('clearResult').onclick=function(){
-        document.getElementById('echarts').innerHTML="";
+        if(mycharts!==undefined){
+            mycharts.dispose();
+        }
+
+        for(let entity of analysisEntity){
+            viewer.entities.remove(entity);
+        }
     }
     function buildCharts(objsdata,min){
 
-        var mycharts=echarts.init(document.getElementById('echarts'));
+        mycharts=echarts.init(document.getElementById('echarts'));
         var option={
             title:{
                 text:'地形剖面'
