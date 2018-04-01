@@ -29,7 +29,8 @@ var Editor={
         return viewer.entities.add({
             position:position,
             point:new Cesium.PointGraphics({
-                pixelSize:10
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
             }),
             label:label,
             props
@@ -76,35 +77,7 @@ function processShowHide(graphicName,isShow,entities) {
         }
     }
 }
-function processShowHideEffcient(graphicName,isShow,entities) {
-    if(entities===undefined||entities.length===0)return;
-    //find first polyline and polygon entity index,
-    let count=[0,0,0];
-    for(let i=0;i<entities.length;++i){
-        if(entities[i].point!==undefined){
-            count[0]++;
-        }
-        else if(entities[i].polyline!==undefined){
-            count[1]++;
-        }
-        else if(entities[i].polygon!==undefined){
-            count[2]++;
-        }
-    }
-    if(graphicName==="Point"){
-        for(let i=0;i<count[0];++i){
-            entities[i].show=isShow;
-        }
-    }else if(graphicName==="Polyline"){
-        for(let i=count[0];i<count[1]+count[0];++i){
-            entities[i].show=isShow;
-        }
-    }else if(graphicName==="Polygon"){
-        for(let i=count[1]+count[0];i<entities.length;++i){
-            entities[i].show=isShow;
-        }
-    }
-}
+
 /*
 此函数假定一个entity只有一个graphic
 * */

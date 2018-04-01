@@ -4,6 +4,7 @@ create author 路建成
 date 2018.3.1
 this is 各个demo的合并版
 但点线面选择会不如单文件版
+将doubleclick结束改为rightclick结束
 -->
 <html lang="en">
 <head>
@@ -13,7 +14,7 @@ this is 各个demo的合并版
     <script src="js/EditorModule.js"></script>
 
     <style>
-        @import "common.css";
+        @import "css/common.css";
         @import "../Build/Cesium/Widgets/widgets.css";
         #toolbar{
             font-family: "Consolas", monospace;
@@ -49,7 +50,7 @@ this is 各个demo的合并版
         <button id="polyline" disabled="disabled">画 线</button>
         <button id="polygon" disabled="disabled">画 面</button>
     </div>
-    <div class="space">    </div>
+    <div class="space"></div>
     <div id="GraphicShowHide" class="showBorder">
         <p>要素显隐</p>
         点显示<input type="checkbox" name="Point" checked="checked">
@@ -104,9 +105,7 @@ this is 各个demo的合并版
                 destination:Cesium.Cartesian3.fromDegrees(90,30,2000),
                 duration:5
             });
-
         }
-
     }
     function InitEntityCustomAddFunction() {
 
@@ -117,18 +116,16 @@ this is 各个demo的合并版
                 document.getElementById("polyline").removeAttribute("disabled");
                 document.getElementById("polygon").removeAttribute("disabled");
                 node.innerHTML="停止绘制";
-                //cleanErrorEditData();
+                
             }else if(node.innerHTML=="停止绘制"){
                 document.getElementById("point").setAttribute("disabled","disabled");
                 document.getElementById("polyline").setAttribute("disabled","disabled");
                 document.getElementById("polygon").setAttribute("disabled","disabled");
                 node.innerHTML="开始绘制";
-                cleanErrorEditData();
+                
             }
-
             document.getElementById("point").onclick=function () {
                 //设置inputAction
-                cleanErrorEditData();
                 Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     //保持point,polyline,polygon是一致的行为
@@ -140,8 +137,6 @@ this is 各个demo的合并版
             };
             //采用每个点
             document.getElementById("polyline").onclick=function () {
-                //alert("双击停止绘制");
-                cleanErrorEditData();
                 Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian){
@@ -155,21 +150,17 @@ this is 各个demo的合并版
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                Globe._handler_.setInputAction(function (move) {
-                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    if(cartesian&&Globe._entity_!==undefined){
-                        Globe._cartesian3Array_.push(cartesian);
-                        viewer.entities.remove(Globe._entity_);
-                        Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
-                        //reset
+                Globe._handler_.setInputAction(function (move) {         
+                    if(Globe._cartesian3Array_.length<2){
+                        cleanErrorEditData();
+                    }else{
                         reset();
-                    }
-                }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+                    } 
+                }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
             };
             //采用第一个是点，第二个便是线，三+就是面
             document.getElementById("polygon").onclick=function () {
-                //alert("双击停止绘制");
-                cleanErrorEditData();
+                
                 Globe._handler_.setInputAction(function (move) {
                     let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
                     if(cartesian){
@@ -190,18 +181,13 @@ this is 各个demo的合并版
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                Globe._handler_.setInputAction(function (move) {
-                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    if(cartesian&&Globe._entity_!==undefined){
-                        Globe._cartesian3Array_.push(cartesian);
-                        viewer.entities.remove(Globe._entity_);
-                        Globe._entity_=Editor.addPolygon(
-                                    new Cesium.PolygonHierarchy(Globe._cartesian3Array_)
-                                );
-                        //reset
+                Globe._handler_.setInputAction(function (move) {               
+                    if(Globe._cartesian3Array_.length<3){
+                        cleanErrorEditData();
+                    }else{
                         reset();
                     }
-                }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+                }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
             };
 
         };

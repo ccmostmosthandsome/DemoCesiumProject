@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+create author 路建成
+date 2018.3.23
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,18 +10,76 @@
     <script src="../Build/CesiumUnminified/Cesium.js"></script>
     <script src="js/EditorModule.js"></script>
     <style>
-        @import "common.css";
+        @import "css/common.css";
         @import "../Build/Cesium/Widgets/widgets.css";
     </style>
 </head>
 <body>
+<button id="enableUnderGround">地下模式</button>
+<button id="fly">fly</button>
 <div id="CesiumContainer"></div>
+
 <script>
     'use strict';
+    /**
+     * 地下模式 所有物体必须采用Primitive API 用entity API高度作用很小
+     * 怎么说那，设置高度后，比如明明在地上的物体，在地下也能看见
+     * 高度无论正负，只要在地下模式，用entity API 的全部一个样
+     * 可以采用camera监听，对于高度《0的物体隐藏
+     * evglobe里模型可以在地下
+     */
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         baseLayerPicker:false
     });
+
+    var camera=viewer.camera;
+    var scene=viewer.scene;
+    camera.changed.addEventListener(function (evt) {
+        console.log('new ');
+        console.log(Cesium.Math.toDegrees(camera.heading));
+        console.log(Cesium.Math.toDegrees(camera.pitch));
+        console.log(Cesium.Math.toDegrees(camera.roll));
+    });
+
+    document.getElementById('enableUnderGround').onclick=function(){
+        //摄像头与地形Collision检测
+        viewer.scene.screenSpaceCameraController.enableCollisionDetection=false;
+
+        var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(
+            Cesium.Cartesian3.fromDegrees(-75.62898254394531, 40.02804946899414, -5000));
+        var model = scene.primitives.add(Cesium.Model.fromGltf({
+            url : '../Apps/SampleData/models/CesiumGround/Cesium_Ground.gltf',
+            modelMatrix : modelMatrix,
+            scale : 200.0
+        }));
+        viewer.entities.add({
+            position:Cesium.Cartesian3.fromDegrees(-75,40,-5000),
+            point:new Cesium.PointGraphics({
+                color:Cesium.Color.YELLOW,
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.RELATIVE_TO_GROUND
+            })
+        });
+        viewer.entities.add({
+            name:"测试线",
+            polyline:new Cesium.PolylineGraphics({
+                positions:Cesium.Cartesian3.fromDegreesArray([
+                    -75,40,
+                    -75.1,40.1
+                ]),
+                material:Cesium.Color.CYAN,
+                width:5.0
+            })
+        });
+        viewer.zoomTo(viewer.entities);
+
+    };
+    document.getElementById('fly').onclick=function(){
+        camera.flyTo({
+            destination:Cesium.Cartesian3.fromDegrees(-75.62898254394531, 40.02804946899414,-50)
+        })
+    }
 </script>
 </body>
 </html>

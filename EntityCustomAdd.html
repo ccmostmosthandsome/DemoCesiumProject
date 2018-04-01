@@ -3,6 +3,7 @@
 create author 路建成
 date 2018.2.28
 add use strict
+将doubleclick结束改为rightclick结束
 -->
 <html lang="en">
 <head>
@@ -11,7 +12,7 @@ add use strict
     <script src="../Build/Cesium/Cesium.js"></script>
     <style>
         @import "../Build/Cesium/Widgets/widgets.css";
-        @import "common.css";
+        @import "css/common.css";
     </style>
 </head>
 <body>
@@ -49,7 +50,6 @@ add use strict
     var cartesian3Array=[];
     document.getElementById("point").onclick=function () {
         //设置inputAction
-        cleanErrorEditData();
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             //保持point,polyline,polygon是一致的行为
@@ -61,8 +61,6 @@ add use strict
     };
     //采用每个点
     document.getElementById("polyline").onclick=function () {
-        //alert("双击停止绘制");
-        cleanErrorEditData();
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
@@ -77,20 +75,15 @@ add use strict
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian&&entity!==undefined){
-                cartesian3Array.push(cartesian);
-                viewer.entities.remove(entity);
-                entity=addLine(cartesian3Array);
-                //reset
+            if(cartesian3Array.length<2){
+                cleanErrorEditData();
+            }else{
                 reset();
             }
-        }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
     };
     //采用第一个是点，第二个便是线，三+就是面
-    document.getElementById("polygon").onclick=function () {
-        //alert("双击停止绘制");
-        cleanErrorEditData();
+    document.getElementById("polygon").onclick=function () {   
         handler.setInputAction(function (move) {
             let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
             if(cartesian){
@@ -114,20 +107,13 @@ add use strict
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian&&entity!==undefined){
-                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                cartesian3Array.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
-                viewer.entities.remove(entity);
-                entity=viewer.entities.add({
-                    polygon:new Cesium.PolygonGraphics({
-                        hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
-                    })
-                });
-                //reset
+            if(cartesian3Array.length<3){
+                cleanErrorEditData();
+            }else{
                 reset();
             }
-        }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK );
+           
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
     };
     function addLine(positions) {
         return viewer.entities.add({
@@ -140,7 +126,8 @@ add use strict
         return viewer.entities.add({
             position:position,
             point:new Cesium.PointGraphics({
-                pixelSize:10
+                pixelSize:10,
+                HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
             })
         });
     }
@@ -157,7 +144,7 @@ add use strict
             reset();
         }
         if(handler!==undefined){
-            handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+            handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
             handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
         }
     }

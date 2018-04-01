@@ -1,23 +1,81 @@
 <!DOCTYPE html>
+<!--
+create author 路建成
+date 2018.3.23
+简单加了事件
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>土方分析 填挖分析</title>
     <script src="../../Build/CesiumUnminified/Cesium.js"></script>
     <script src="../js/EditorModule.js"></script>
+    <script src="../js/CesiumUtil.js"></script>
     <style>
-        @import "../common.css";
+        @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
     </style>
 </head>
 <body>
+<p><label>土方高度 单位：m<input type="number" value="0.0"></label></p>
+<button id="cutFillAnalysis">土方分析</button>
 <div id="CesiumContainer"></div>
 <script>
     'use strict';
+    /**
+     * 土方分析，选择一定高度（default=0）,选择一定范围的区域（有高程数据）
+     * 将其填平所需/所铲除的土的立方数（m^3）
+     */
+    /**
+     * 具体做法：
+     * 0 获得所要填平的高度（optional）,default=0
+     * 1 用户交互获得所要填平的区域，简单的polygon
+     * 2 根据获得区域，均匀布点
+     * 3 获得布点的每个点的高程
+     * 4 根据所有点的高程以及所要填平的高度计算所需/铲除的土方面积
+     *
+     * 均匀布点：
+     * 1 世界坐标-》WGS84->Web Mercator
+     * 2 按照步进的方式每隔一定距离踩一个点
+     * 为了性能，不要踩1000点以上，也没必要，dem精度在那里
+     */
+    
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer",{
         baseLayerPicker:false
     });
+    document.getElementById("cutFillAnalysis").onclick=function () {
+        //alert("双击停止绘制");
+        cleanErrorEditData();
+        handler.setInputAction(function (move) {
+            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+            if(cartesian){
+                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
+                Globe._cartesian3Array_.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
+                if(Globe._entity_!==undefined){
+                    viewer.entities.remove(Globe._entity_);
+                    if(cartesian3Array.length===2){
+                        Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
+                    }else{
+                        Globe._entity_=vEditor.addPolygon(Cesium.PolygonHierarchy(cartesiGlobe._cartesian3Array_an3Array));
+                    }
+                }
+                else {
+                    entity=Editor.addPoint(Globe._cartesian3Array_[0]);
+                }
+            }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        handler.setInputAction(function (move) {
+            //reset
+            reset();
+            handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+            handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
+    };
+    //只获得最外面的polygon值，其余忽略
+    //var positions=polygonEntity.polygon.hierarchy.positions;
+
+
 </script>
 </body>
 </html>

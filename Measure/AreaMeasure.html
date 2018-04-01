@@ -10,7 +10,7 @@ add use strict
     <title>面积测量</title>
     <script src="../../Build/Cesium/Cesium.js"></script>
     <style>
-        @import "../common.css";
+        @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
     </style>
 </head>
@@ -39,7 +39,6 @@ add use strict
 
     handler.setInputAction(function (move) {
         let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-
         if(cartesian){
             let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
             projectionPoints.push(projection.project(cartographic));
@@ -47,8 +46,6 @@ add use strict
                 let area=calcArea(projectionPoints);
                 alert(area.toFixed(2)+' m^2');
             }
-
-
         }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 </script>
