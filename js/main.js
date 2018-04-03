@@ -3,6 +3,7 @@ require.config({
     paths : {
         "EditorModule" : ["../EditorModule"],
         "domReady":["../domReady"],
+        "MeasureModule":["../MeasureModule"],
 
     }
 });
