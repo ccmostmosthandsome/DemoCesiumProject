@@ -4,3 +4,7 @@
 js/lib/
 #vscode文件
 .vscode
+# mac os文件
+.DS_Store
+#test
+test*.html

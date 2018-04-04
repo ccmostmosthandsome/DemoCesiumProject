@@ -24,7 +24,7 @@ add use strict
   * */
     Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
     const viewer=new Cesium.Viewer("CesiumContainer");
-    let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     var projectionPoints=[];
     const projection=new Cesium.WebMercatorProjection();
 
