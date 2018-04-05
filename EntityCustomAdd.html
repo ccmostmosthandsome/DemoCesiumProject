@@ -25,13 +25,10 @@ add use strict
 </div>
 <div id="CesiumContainer"></div>
 <script>
-
-    'use strict';
     //保证 require.config 有效
 require(['js/main'],function () {
-    require(["Cesium","EditorModule","domReady!"],function(Cesium,Editor){
-
-
+    require(["Cesium","app/EditorModule","lib/domReady!"],function(Cesium,Editor){
+            'use strict';
             Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
             const viewer=new Cesium.Viewer("CesiumContainer");
             const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);

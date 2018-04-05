@@ -1,9 +1,7 @@
 require.config({
-    baseUrl:"js/Source",
+    baseUrl:"js/lib/Cesium",
     paths : {
-        "EditorModule" : ["../EditorModule"],
-        "domReady":["../domReady"],
-        "MeasureModule":["../MeasureModule"],
-
+        "app" : ["../../app"],
+        "lib":["../"]
     }
 });

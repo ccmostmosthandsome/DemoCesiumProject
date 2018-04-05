@@ -59,10 +59,10 @@ this is 各个demo的合并版
 </div>
 <div id="CesiumContainer"></div>
 <script>
-    'use strict';
+
     require(["js/main"],function(){
-        require(["Cesium","EditorModule","domReady!"],function(Cesium,Editor){
-            
+        require(["Cesium","app/EditorModule","lib/domReady!"],function(Cesium,Editor){
+            'use strict';
             Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
             const viewer=new Cesium.Viewer("CesiumContainer",{
                 infobox:false,

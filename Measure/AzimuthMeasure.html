@@ -27,9 +27,9 @@ add use strict
     'use strict';
     require(["../js/main"],function () {
         require.config({
-            baseUrl:'../js/Source'
+            baseUrl:'../js/lib/Cesium'
         });
-       require(["Cesium","EditorModule","domReady!"],function (Cesium,Editor) {
+       require(["Cesium","app/EditorModule","lib/domReady!"],function (Cesium,Editor) {
            Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
            const viewer=new Cesium.Viewer("CesiumContainer");
            var editor=new Editor(viewer.entities);

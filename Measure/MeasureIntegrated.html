@@ -37,9 +37,9 @@ to simple package function
 
     require(["../js/main"],function () {
         require.config({
-            baseUrl:'../js/Source'
+            baseUrl:'../js/lib/Cesium'
         });
-       require(["Cesium","EditorModule","MeasureModule","domReady!"],function (Cesium,Editor,Measure) {
+       require(["Cesium","app/EditorModule","app/MeasureModule","lib/domReady!"],function (Cesium,Editor,Measure) {
            'use strict';
            Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
            const viewer=new Cesium.Viewer("CesiumContainer");
