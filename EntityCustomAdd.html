@@ -9,7 +9,7 @@ add use strict
 <head>
     <meta charset="UTF-8">
     <title>点线面的手工绘制添加</title>
-    <script src="../Build/Cesium/Cesium.js"></script>
+    <script  src="js/require.js" ></script>
     <style>
         @import "../Build/Cesium/Widgets/widgets.css";
         @import "css/common.css";
@@ -25,115 +25,128 @@ add use strict
 </div>
 <div id="CesiumContainer"></div>
 <script>
-    'use strict';
-    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
-    const viewer=new Cesium.Viewer("CesiumContainer");
-    let handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    const node= document.getElementById("StartDraw");
-    node.onclick=function () {
-        if(node.innerHTML=="开始绘制"){
-            document.getElementById("point").removeAttribute("disabled");
-            document.getElementById("polyline").removeAttribute("disabled");
-            document.getElementById("polygon").removeAttribute("disabled");
-            node.innerHTML="停止绘制";
-            //cleanErrorEditData();
-        }else if(node.innerHTML=="停止绘制"){
-            document.getElementById("point").setAttribute("disabled","disabled");
-            document.getElementById("polyline").setAttribute("disabled","disabled");
-            document.getElementById("polygon").setAttribute("disabled","disabled");
-            node.innerHTML="开始绘制";
-            cleanErrorEditData();
-        }
-    };
+    //保证 require.config 有效
+require(['js/main'],function () {
+    require(["Cesium","app/EditorModule","lib/domReady!"],function(Cesium,Editor){
+            'use strict';
+            Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+            const viewer=new Cesium.Viewer("CesiumContainer");
+            const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+            const node= document.getElementById("StartDraw");
+            const editor=new Editor(viewer.entities);
+            node.onclick=function () {
+                if(node.innerHTML=="开始绘制"){
+                    document.getElementById("point").removeAttribute("disabled");
+                    document.getElementById("polyline").removeAttribute("disabled");
+                    document.getElementById("polygon").removeAttribute("disabled");
+                    node.innerHTML="停止绘制";
 
-    var entity=undefined;
-    var cartesian3Array=[];
-    document.getElementById("point").onclick=function () {
-        //设置inputAction
-        handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            //保持point,polyline,polygon是一致的行为
-            if(cartesian){
-                entity=addPoint(cartesian);
-                reset();
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    };
-    //采用每个点
-    document.getElementById("polyline").onclick=function () {
-        handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                cartesian3Array.push(cartesian);
-                if(entity!==undefined){
-                    viewer.entities.remove(entity);
-                    entity=addLine(cartesian3Array);
+                }else if(node.innerHTML=="停止绘制"){
+                    document.getElementById("point").setAttribute("disabled","disabled");
+                    document.getElementById("polyline").setAttribute("disabled","disabled");
+                    document.getElementById("polygon").setAttribute("disabled","disabled");
+                    node.innerHTML="开始绘制";
+                    editor.cleanErrorEditData(handler);
                 }
-                else {
-                    entity=addPoint(cartesian3Array[0]);
-                }
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        handler.setInputAction(function (move) {
-            if(cartesian3Array.length<2){
-                cleanErrorEditData();
-            }else{
-                reset();
-            }
-        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
-    };
-    //采用第一个是点，第二个便是线，三+就是面
-    document.getElementById("polygon").onclick=function () {   
-        handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                let cartographic=Cesium.Cartographic.fromCartesian(cartesian);
-                cartesian3Array.push(Cesium.Cartesian3.fromRadians(cartographic.longitude,cartographic.latitude));
-                if(entity!==undefined){
-                    viewer.entities.remove(entity);
-                    if(cartesian3Array.length===2){
-                        entity=addLine(cartesian3Array);
-                    }else{
-                        entity=viewer.entities.add({
-                            polygon:new Cesium.PolygonGraphics({
-                                hierarchy:new Cesium.PolygonHierarchy(cartesian3Array)
-                            })
-                        });
+            };
+
+
+            document.getElementById("point").onclick=function () {
+                //设置inputAction
+                handler.setInputAction(function (move) {
+                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                    //保持point,polyline,polygon是一致的行为
+                    if(cartesian){
+                        let entity=editor.addPoint(cartesian);
+                        editor.entity(entity);
+                        editor.reset();
                     }
-                }
-                else {
-                    entity=addPoint(cartesian3Array[0]);
-                }
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        handler.setInputAction(function (move) {
-            if(cartesian3Array.length<3){
-                cleanErrorEditData();
-            }else{
-                reset();
-            }
-           
-        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-    };
-    function addLine(positions) {
-        return viewer.entities.add({
-            polyline:new Cesium.PolylineGraphics({
-                positions:positions
-            })
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+            };
+            //采用每个点
+            document.getElementById("polyline").onclick=function () {
+                handler.setInputAction(function (move) {
+                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                    if(cartesian){
+                        editor.cartesian3ArrayPush(cartesian);
+                        let entity=editor.entity();
+                        if(entity!==undefined){
+                            viewer.entities.remove(entity);
+                            entity=editor.addPolyline(editor.cartesian3Array());
+                            editor.entity(entity);
+                        }
+                        else {
+                            entity=editor.addPoint(editor.cartesian3Array()[0]);
+                            editor.entity(entity);
+                        }
+                    }
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                handler.setInputAction(function (move) {
+                    if(editor.cartesian3Array().length<2){
+                        editor.cleanErrorEditData(handler);
+                    }else{
+                        editor.reset();
+                    }
+                }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
+            };
+            //采用第一个是点，第二个便是线，三+就是面
+            document.getElementById("polygon").onclick=function () {
+                handler.setInputAction(function (move) {
+                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                    if(cartesian){
+                        editor.cartesian3ArrayPush(cartesian);
+                        let entity=editor.entity();
+                        if(entity!==undefined){
+                            viewer.entities.remove(entity);
+                            if(editor.cartesian3Array().length===2){
+                                entity=editor.addPolyline(editor.cartesian3Array());
+                                editor.entity(entity);
+                            }else{
+                                entity=editor.addPolygon(new Cesium.PolygonHierarchy(editor.cartesian3Array()));
+                                editor.entity(entity);
+
+                            }
+                        }
+                        else {
+                            entity=editor.addPoint(editor.cartesian3Array()[0]);
+                            editor.entity(entity);
+                        }
+                    }
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                handler.setInputAction(function (move) {
+                    if(editor.cartesian3Array().length<3){
+                        editor.cleanErrorEditData(handler);
+                    }else{
+                        editor.reset();
+                    }
+
+                }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+            };
         });
-    }
-    function addPoint(position) {
-        return viewer.entities.add({
-            position:position,
-            point:new Cesium.PointGraphics({
-                pixelSize:10,
-                HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
-            })
-        });
-    }
-    /**
-     *将单次画entity清空，以便下次绘画
-     */
+
+});
+//每个代码
+    /*
+            function addLine(positions) {
+                return viewer.entities.add({
+                    polyline:new Cesium.PolylineGraphics({
+                        positions:positions
+                    })
+                });
+            }
+            function addPoint(position) {
+                return viewer.entities.add({
+                    position:position,
+                    point:new Cesium.PointGraphics({
+                        pixelSize:10,
+                        HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND
+                    })
+                });
+            }
+            /**
+             *将单次画entity清空，以便下次绘画
+             */
+    /*
     function reset() {
         entity=undefined;
         cartesian3Array=[];
@@ -148,6 +161,7 @@ add use strict
             handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
         }
     }
+    */
 </script>
 </body>
 </html>

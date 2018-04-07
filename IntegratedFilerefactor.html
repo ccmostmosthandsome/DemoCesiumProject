@@ -10,8 +10,7 @@ this is 各个demo的合并版
 <head>
     <meta charset="UTF-8">
     <title>所有demo 集成到一块</title>
-    <script src="../Build/Cesium/Cesium.js"></script>
-    <script src="js/EditorModule.js"></script>
+    <script src="js/require.js" ></script>
 
     <style>
         @import "css/common.css";
@@ -60,170 +59,187 @@ this is 各个demo的合并版
 </div>
 <div id="CesiumContainer"></div>
 <script>
-    'use strict';
-    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
-    const viewer=new Cesium.Viewer("CesiumContainer",{
-        infobox:false,
-        selectionIndicator:false
-    });
-    //private var
 
-    Globe._handler_=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    Globe.HIGHTLIGHTCOLOR=Cesium.Color.RED; //全局高亮设置
-
-    InitEntityCustomAddFunction();
-    InitEntityCategoryShowHide();
-    InitFlyToFunction();
-    InitEntitySelect();
-
-    //init
-    function InitFlyToFunction() {
-        //binding event
-        document.getElementById("flyToImpl1").onclick=function () {
-            alert("将定位到预定义的box位置");
-            let box=viewer.entities.add({
-                //id不能重复
-                //id:"testentity",
-                name:"box",
-                position:Cesium.Cartesian3.fromDegrees(100,40,1000),
-                box:new Cesium.BoxGraphics({
-                    dimensions:new Cesium.Cartesian3(1000,2000,3000),
-                    material:new Cesium.ColorMaterialProperty(Cesium.Color.RED),
-                    shadows:Cesium.ShadowMode.ENABLE
-                })
+    require(["js/main"],function(){
+        require(["Cesium","app/EditorModule","lib/domReady!"],function(Cesium,Editor){
+            'use strict';
+            Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+            const viewer=new Cesium.Viewer("CesiumContainer",{
+                infobox:false,
+                selectionIndicator:false
             });
-            //impl1
-            viewer.flyTo(box,{
-                maximumHeight:50000,
-                duration:5
-            });
-        };
-        document.getElementById("flyToImpl2").onclick=function () {
-            //impl2
-            alert("将定位到90 W,30 N 2000 H位置");
-            viewer.camera.flyTo({
-                destination:Cesium.Cartesian3.fromDegrees(90,30,2000),
-                duration:5
-            });
-        }
-    }
-    function InitEntityCustomAddFunction() {
+            const editor=new Editor(viewer.entities);
+            //private var
 
-        const node= document.getElementById("StartDraw");
-        node.onclick=function () {
-            if(node.innerHTML=="开始绘制"){
-                document.getElementById("point").removeAttribute("disabled");
-                document.getElementById("polyline").removeAttribute("disabled");
-                document.getElementById("polygon").removeAttribute("disabled");
-                node.innerHTML="停止绘制";
-                
-            }else if(node.innerHTML=="停止绘制"){
-                document.getElementById("point").setAttribute("disabled","disabled");
-                document.getElementById("polyline").setAttribute("disabled","disabled");
-                document.getElementById("polygon").setAttribute("disabled","disabled");
-                node.innerHTML="开始绘制";
-                
-            }
-            document.getElementById("point").onclick=function () {
-                //设置inputAction
-                Globe._handler_.setInputAction(function (move) {
-                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    //保持point,polyline,polygon是一致的行为
-                    if(cartesian){
-                        Globe._entity_=Editor.addPoint(cartesian);
-                        reset();
-                    }
-                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-            };
-            //采用每个点
-            document.getElementById("polyline").onclick=function () {
-                Globe._handler_.setInputAction(function (move) {
-                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    if(cartesian){
-                        Globe._cartesian3Array_.push(cartesian);
-                        if(Globe._entity_!==undefined){
-                            viewer.entities.remove(Globe._entity_);
-                            Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
-                        }
-                        else {
-                            Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
-                        }
-                    }
-                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                Globe._handler_.setInputAction(function (move) {         
-                    if(Globe._cartesian3Array_.length<2){
-                        cleanErrorEditData();
-                    }else{
-                        reset();
-                    } 
-                }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
-            };
-            //采用第一个是点，第二个便是线，三+就是面
-            document.getElementById("polygon").onclick=function () {
-                
-                Globe._handler_.setInputAction(function (move) {
-                    let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-                    if(cartesian){
-                        Globe._cartesian3Array_.push(cartesian);
-                        if(Globe._entity_!==undefined){
-                            viewer.entities.remove(Globe._entity_);
-                            if(Globe._cartesian3Array_.length===2){
-                                Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
-                            }else{
-                                Globe._entity_=Editor.addPolygon(
-                                    new Cesium.PolygonHierarchy(Globe._cartesian3Array_)
-                                )
-                              
-                            }
-                        }
-                        else {
-                            Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
-                        }
-                    }
-                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                Globe._handler_.setInputAction(function (move) {               
-                    if(Globe._cartesian3Array_.length<3){
-                        cleanErrorEditData();
-                    }else{
-                        reset();
-                    }
-                }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
-            };
+            const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+            const HIGHTLIGHTCOLOR=Cesium.Color.RED; //全局高亮设置
 
-        };
-    }
-    function InitEntityCategoryShowHide() {
-        //binding event
-        let nodes=document.querySelectorAll("#GraphicShowHide input");
-        for(let i=0;i<nodes.length;++i){
-            nodes.item(i).addEventListener("click",function (evt) {
-                console.log(evt);
-                let str=evt.target.name;
-                processShowHide(str,evt.target.checked,viewer.entities.values);
-            });
-        }
-    }
-    function InitEntitySelect() {
+            InitEntityCustomAddFunction();
+            InitEntityCategoryShowHide();
+            InitFlyToFunction();
+            InitEntitySelect();
 
-        viewer.screenSpaceEventHandler.setInputAction(function leftClick(click) {
-            let pick=viewer.scene.pick(click.position);
-            //判断
-            if(pick==undefined){
-                //遍历容器内的entity,恢复默认值
-                let entities=viewer.entities.values;
-                for(let i=0;i<entities.length;++i){
-                    processSelect(entities[i],Cesium.Color.WHITE);
+            //init
+            function InitFlyToFunction() {
+                //binding event
+                document.getElementById("flyToImpl1").onclick=function () {
+                    alert("将定位到预定义的box位置");
+                    let box=viewer.entities.add({
+                        //id不能重复
+                        //id:"testentity",
+                        name:"box",
+                        position:Cesium.Cartesian3.fromDegrees(100,40,1000),
+                        box:new Cesium.BoxGraphics({
+                            dimensions:new Cesium.Cartesian3(1000,2000,3000),
+                            material:new Cesium.ColorMaterialProperty(Cesium.Color.RED),
+                            shadows:Cesium.ShadowMode.ENABLE
+                        })
+                    });
+                    //impl1
+                    viewer.flyTo(box,{
+                        maximumHeight:50000,
+                        duration:5
+                    });
+                };
+                document.getElementById("flyToImpl2").onclick=function () {
+                    //impl2
+                    alert("将定位到90 W,30 N 2000 H位置");
+                    viewer.camera.flyTo({
+                        destination:Cesium.Cartesian3.fromDegrees(90,30,2000),
+                        duration:5
+                    });
                 }
             }
-            else{
-                processSelect(pick.id,Globe.HIGHTLIGHTCOLOR);
-                //print info
-                console.log(pick.id);
-                //alert(pick.id.attributes.data);
-            }
+            function InitEntityCustomAddFunction() {
 
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    }
+                const node= document.getElementById("StartDraw");
+                node.onclick=function () {
+                    if(node.innerHTML=="开始绘制"){
+                        document.getElementById("point").removeAttribute("disabled");
+                        document.getElementById("polyline").removeAttribute("disabled");
+                        document.getElementById("polygon").removeAttribute("disabled");
+                        node.innerHTML="停止绘制";
+
+                    }else if(node.innerHTML=="停止绘制"){
+                        document.getElementById("point").setAttribute("disabled","disabled");
+                        document.getElementById("polyline").setAttribute("disabled","disabled");
+                        document.getElementById("polygon").setAttribute("disabled","disabled");
+                        node.innerHTML="开始绘制";
+
+                    }
+                    document.getElementById("point").onclick=function () {
+                        //设置inputAction
+                        handler.setInputAction(function (move) {
+                            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                            //保持point,polyline,polygon是一致的行为
+                            if(cartesian){
+                                let entity=editor.addPoint(cartesian);
+                                editor.entity(entity);
+                                editor.reset();
+                            }
+                        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                    };
+                    //采用每个点
+                    document.getElementById("polyline").onclick=function () {
+                        handler.setInputAction(function (move) {
+                            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                            if(cartesian){
+                                editor.cartesian3ArrayPush(cartesian);
+                                let entity=editor.entity();
+                                if(entity!==undefined){
+                                    viewer.entities.remove(entity);
+                                    entity=editor.addPolyline(editor.cartesian3Array());
+                                    editor.entity(entity);
+                                }
+                                else {
+                                    entity=editor.addPoint(editor.cartesian3Array());
+                                    editor.entity(entity);
+                                }
+                            }
+                        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                        handler.setInputAction(function (move) {
+                            if(editor.cartesian3Array().length<2){
+                                editor.cleanErrorEditData(handler);
+                            }else{
+                                editor.reset();
+                            }
+                        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
+                    };
+                    //采用第一个是点，第二个便是线，三+就是面
+                    document.getElementById("polygon").onclick=function () {
+
+                        handler.setInputAction(function (move) {
+                            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                            if(cartesian){
+                                editor.cartesian3ArrayPush(cartesian);
+                                let entity=editor.entity();
+                                if(entity!==undefined){
+
+                                    viewer.entities.remove(entity);
+                                    if(editor.cartesian3Array().length===2){
+                                        entity=editor.addPolyline(editor.cartesian3Array());
+                                        editor.entity(entity)
+                                    }else{
+                                        entity=editor.addPolygon(
+                                            new Cesium.PolygonHierarchy(editor.cartesian3Array())
+                                        );
+                                        editor.entity(entity);
+
+                                    }
+                                }
+                                else {
+                                    entity=editor.addPoint(editor.cartesian3Array());
+                                    editor.entity(entity);
+                                }
+                            }
+                        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                        handler.setInputAction(function (move) {
+                            if(editor.cartesian3Array().length<3){
+                                editor.cleanErrorEditData();
+                            }else{
+                                editor.reset();
+                            }
+                        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
+                    };
+
+                };
+            }
+            function InitEntityCategoryShowHide() {
+                //binding event
+                let nodes=document.querySelectorAll("#GraphicShowHide input");
+                for(let i=0;i<nodes.length;++i){
+                    nodes.item(i).addEventListener("click",function (evt) {
+                        console.log(evt);
+                        let str=evt.target.name;
+                        editor.processShowHide(str,evt.target.checked,viewer.entities.values);
+                    });
+                }
+            }
+            function InitEntitySelect() {
+
+                viewer.screenSpaceEventHandler.setInputAction(function leftClick(click) {
+                    let pick=viewer.scene.pick(click.position);
+                    //判断
+                    if(pick==undefined){
+                        //遍历容器内的entity,恢复默认值
+                        let entities=viewer.entities.values;
+                        for(let i=0;i<entities.length;++i){
+                            editor.processSelect(entities[i],Cesium.Color.WHITE);
+                        }
+                    }
+                    else{
+                        editor.processSelect(pick.id, HIGHTLIGHTCOLOR);
+                        //print info
+                        console.log(pick.id);
+                        //alert(pick.id.attributes.data);
+                    }
+
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+            }
+        });
+    });
+
+
 </script>
 </body>
 </html>

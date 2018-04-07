@@ -1,7 +1,6 @@
 #Intellij 
 .idea
-# echarts 百度地图js,require.js
-js/lib/
+
 #vscode文件
 .vscode
 # mac os文件

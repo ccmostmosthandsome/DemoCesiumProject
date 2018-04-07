@@ -8,9 +8,8 @@ add use strict
 <head>
     <meta charset="UTF-8">
     <title>方位角测量</title>
-    <script src="../../Build/Cesium/Cesium.js"></script>
-    <script src="../js/EditorModule.js"></script>
-    <script src="../js/MeasureModule.js"></script>
+    <script src="../js/require.js"></script>
+
     <style>
         @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -21,94 +20,111 @@ add use strict
 <div id="CesiumContainer"></div>
 
 <script>
-    'use strict';
     /**
      * 方位角计算
      * 从正北方向开始算，返回方位角
      */
-    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
-    const viewer=new Cesium.Viewer("CesiumContainer");
-    const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    const projection=new Cesium.WebMercatorProjection();
-    var entities=[];
-    document.getElementById('angle').onclick=function () {
-        handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._cartesian3Array_.push(cartesian);
-                let len=Globe._cartesian3Array_.length;
-                if(len%2===0){
-                    //delete
-                    viewer.entities.remove(entities[entities.length-1]);
-                    entities.pop();
+    'use strict';
+    require(["../js/main"],function () {
+        require.config({
+            baseUrl:'../js/lib/Cesium'
+        });
+       require(["Cesium","app/EditorModule","lib/domReady!"],function (Cesium,Editor) {
+           Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+           const viewer=new Cesium.Viewer("CesiumContainer");
+           var editor=new Editor(viewer.entities);
+           const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+           const projection=new Cesium.WebMercatorProjection();
+           var entities=[];
+           document.getElementById('angle').onclick=function () {
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       editor.cartesian3ArrayPush(cartesian);
+                       let len=editor.cartesian3Array().length;
+                       if(len%2===0){
+                           //delete
+                           viewer.entities.remove(entities[entities.length-1]);
+                           entities.pop();
 
-                    let angle=decorateCalcAzimuth(Globe._cartesian3Array_[len-1],Globe._cartesian3Array_[len-2]);
-                    let left=generateVerticalLine(Globe._cartesian3Array_[len-1],Globe._cartesian3Array_[len-2]);
-                    //画两条线
-                    entities.push(Editor.addLine([Globe._cartesian3Array_[len-2],left],undefined,undefined,{
-                        width:5.0
-                    }));
-                    entities.push(Editor.addLine(
-                        [Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]],
-                        Globe._cartesian3Array_[len-2],
-                        new Cesium.LabelGraphics({
-                            text:angle.toFixed(2)+'度',
-                            scale:0.5
-                        }),
-                        {
-                            width:5.0
-                        }
-                    ));
-                    //handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                }else {
-                    entities.push(Editor.addPoint(Globe._cartesian3Array_[Globe._cartesian3Array_.length-1]));
-                }
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    };
-    /**
-     * input center,end 地理坐标
-     * angle 方位角
-     * output b地理坐标
-     */
-    function generateVerticalLine(center,end){
-        let cartographic=Cesium.Cartographic.fromCartesian(center);
-        var lon;
-        lon=Cesium.Math.toDegrees(cartographic.longitude);
+                           let angle=decorateCalcAzimuth(editor.cartesian3Array()[len-1],editor.cartesian3Array()[len-2]);
+                           let left=generateVerticalLine(editor.cartesian3Array()[len-1],editor.cartesian3Array()[len-2]);
+                           //画两条线
+                           entities.push(editor.addPolyline([editor.cartesian3Array()[len-2],left],undefined,undefined,{
+                               width:5.0
+                           }));
+                           entities.push(editor.addPolyline(
+                               [editor.cartesian3Array()[len-2],editor.cartesian3Array()[len-1]],
+                               editor.cartesian3Array()[len-2],
+                               new Cesium.LabelGraphics({
+                                   text:angle.toFixed(2)+'度',
+                                   scale:0.5
+                               }),
+                               {
+                                   width:5.0
+                               }
+                           ));
 
-        let answer=Cesium.Cartesian3.fromDegrees(lon,90);
+                       }else {
+                           entities.push(editor.addPoint(editor.cartesian3Array()[editor.cartesian3Array().length-1]));
+                       }
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+               handler.setInputAction(function (move) {
 
-        return answer;
-    }
-     /**
-      * 将世界坐标转化为webMercator投影坐标,给calcAzimuth方法用
-      */
-    function decorateCalcAzimuth(start,end) {
-        //返回经纬度坐标（角度表示）
-        let start1=Cesium.Cartographic.fromCartesian(start);
-        let end1=Cesium.Cartographic.fromCartesian(end);
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+               }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+           };
+           /**
+            * input center,end 地理坐标
+            * angle 方位角
+            * output b地理坐标
+            */
+           function generateVerticalLine(center,end){
+               let cartographic=Cesium.Cartographic.fromCartesian(center);
 
-        return calcAzimuth(projection.project(start1),projection.project(end1));
-    }
-    /**
-     *  要投影坐标
-     * @param start 起始坐标
-     * @param end 终止坐标
-     * @return 返回方位角 0-360
-     */
-    function calcAzimuth(start,end) {
-        var angle=Math.atan((end.x-start.x)/(end.y-start.y))*180/Math.PI;
-        if(start.y>end.y){
-            if(start.x>end.x){
+               var lon=Cesium.Math.toDegrees(cartographic.longitude);
 
-            }else{
-                angle+=360;
-            }
-        }else{
-            angle+=180;
-        }
-        return angle;
-    }
+               let answer=Cesium.Cartesian3.fromDegrees(lon,90);
+
+               return answer;
+           }
+           /**
+            * 将世界坐标转化为webMercator投影坐标,给calcAzimuth方法用
+            */
+           function decorateCalcAzimuth(start,end) {
+               //返回经纬度坐标（角度表示）
+               let start1=Cesium.Cartographic.fromCartesian(start);
+               let end1=Cesium.Cartographic.fromCartesian(end);
+
+               return calcAzimuth(projection.project(start1),projection.project(end1));
+           }
+           /**
+            *  要投影坐标
+            * @param start 起始坐标
+            * @param end 终止坐标
+            * @return 返回方位角 0-360
+            */
+           function calcAzimuth(start,end) {
+               var angle=Math.atan((end.x-start.x)/(end.y-start.y))*180/Math.PI;
+               if(start.y>end.y){
+                   if(start.x>end.x){
+
+                   }else{
+                       angle+=360;
+                   }
+               }else{
+                   angle+=180;
+               }
+               return angle;
+           }
+
+       })
+    });
+
+
+
 </script>
 </body>
 </html>

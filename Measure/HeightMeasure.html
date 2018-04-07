@@ -8,8 +8,8 @@ add use strict
 <head>
     <meta charset="UTF-8">
     <title>高度测量</title>
-    <script src="../../Build/Cesium/Cesium.js"></script>
-    <script src="../js/EditorModule.js"></script>
+    <script src="../js/require.js"></script>
+
     <style>
         @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -20,53 +20,68 @@ add use strict
 <div id="CesiumContainer"></div>
 
 <script>
-    'use strict';
-    //一定要有terrainProvider
-    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
-    const viewer=new Cesium.Viewer("CesiumContainer");
+    require(['../js/main'],function () {
+        require.config({
+            baseUrl:'../js/lib/Cesium'
+        });
+       require(["Cesium","app/EditorModule","lib/domReady!"],function (Cesium,Editor) {
+           'use strict';
+           //一定要有terrainProvider
+           Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+           const viewer=new Cesium.Viewer("CesiumContainer");
 
-    const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    viewer.terrainProvider=new Cesium.createWorldTerrain();
+           const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
-    viewer.camera.flyTo({
-        destination:Cesium.Cartesian3.fromDegrees(128.956,42.34955,10000),
-        duration:5
+           var editor=new Editor(viewer.entities);
+           viewer.terrainProvider=new Cesium.createWorldTerrain();
+
+           viewer.camera.flyTo({
+               destination:Cesium.Cartesian3.fromDegrees(128.956,42.34955,10000),
+               duration:5
+           });
+           document.getElementById('height').onclick=function () {
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       editor.cartesian3ArrayPush(cartesian);
+                       let entity=editor.entity();
+                       if(entity!==undefined&&editor.cartesian3Array().length===2){
+                           viewer.entities.remove(entity);
+                           entity=editor.addPolyline(
+                               editor.cartesian3Array(),
+                               editor.cartesian3Array()[parseInt(editor.cartesian3Array().length)/2],
+                               new Cesium.LabelGraphics({
+                                   text:calcRelativeHeight(editor.cartesian3Array())[0].toFixed(2)+" m ",
+                                   scale:0.35
+                               })
+                           );
+                           editor.entity(entity);
+                           editor.reset();
+                           handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                       }else {
+                           entity=editor.addPoint(editor.cartesian3Array()[0]);
+                           editor.entity(entity);
+                       }
+
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+           };
+           function calcRelativeHeight(cartesian3Array){
+               const wgs84globe=viewer.scene.globe;
+               let heightdiff=[];
+               for(let i=1;i<cartesian3Array.length;++i){
+                   let cartographic1=Cesium.Cartographic.fromCartesian(cartesian3Array[i-1]);
+                   let cartographic2=Cesium.Cartographic.fromCartesian(cartesian3Array[i]);
+                   heightdiff.push(wgs84globe.getHeight(cartographic1)-wgs84globe.getHeight(cartographic2));
+               }
+               return heightdiff;
+           }
+       });
     });
 
-    document.getElementById('height').onclick=function () {
-        handler.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._cartesian3Array_.push(cartesian);
-                if(Globe._entity_!==undefined&&Globe._cartesian3Array_.length===2){
-                    viewer.entities.remove(Globe._entity_);
-                    Globe._entity_=Editor.addLine(
-                        Globe._cartesian3Array_,
-                        Globe._cartesian3Array_[parseInt(Globe._cartesian3Array_.length)/2],
-                        new Cesium.LabelGraphics({
-                            text:calcRelativeHeight(Globe._cartesian3Array_)[0].toFixed(2)+" m ",
-                            scale:0.35
-                        })
-                    );
-                    reset();
-                    handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                }else {
-                    Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
-                }
 
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    };
-function calcRelativeHeight(cartesian3Array){
-    const wgs84globe=viewer.scene.globe;
-    let heightdiff=[];
-    for(let i=1;i<cartesian3Array.length;++i){
-        let cartographic1=Cesium.Cartographic.fromCartesian(cartesian3Array[i-1]);
-        let cartographic2=Cesium.Cartographic.fromCartesian(cartesian3Array[i]);
-        heightdiff.push(wgs84globe.getHeight(cartographic1)-wgs84globe.getHeight(cartographic2));
-    }
-    return heightdiff;
-}
+
+
 
 </script>
 </body>

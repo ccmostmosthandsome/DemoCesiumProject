@@ -15,9 +15,8 @@ to simple package function
 <head>
     <meta charset="UTF-8">
     <title>点位，长度，面积,方位角,高度测量</title>
-    <script src="../../Build/Cesium/Cesium.js"></script>
-    <script src="../js/EditorModule.js"></script>
-    <script src="../js/MeasureModule.js"></script>
+    <script src="../js/require.js"></script>
+    
     <style>
         @import "../css/common.css";
         @import "../../Build/Cesium/Widgets/widgets.css";
@@ -35,200 +34,217 @@ to simple package function
 <div id="CesiumContainer"></div>
 
 <script>
-    'use strict';
-    Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
-    const viewer=new Cesium.Viewer("CesiumContainer");
-    Globe._handler_=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    viewer.terrainProvider=new Cesium.createWorldTerrain();
-    const projection=new Cesium.WebMercatorProjection();
-    //用于成功创建后entity清空用
-    var measureEntities=[];
-    document.getElementById("point").onclick=function () {
-        //设置inputAction
-        clearErrorMeasureData();
-        Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._entity_=Editor.addPoint(cartesian,new Cesium.LabelGraphics({
-                    text:Measure.Geo2Str(cartesian,2),
-                    scale:0.35,
-                    pixelOffset:new Cesium.Cartesian2(10,-10)//右上角偏移
-                }));
-                //加入计算结果中，以便删除
-                measureEntities.push(Globe._entity_);
-                updateClearMeasureButton();
-                reset();
-                Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    };
-    //采用每个点
-    document.getElementById("length").onclick=function () {
-        clearErrorMeasureData();
-        Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._cartesian3Array_.push(cartesian);
-                if(Globe._entity_!==undefined){
-                    viewer.entities.remove(Globe._entity_);
-                    Globe._entity_=Editor.addLine(Globe._cartesian3Array_,Globe._cartesian3Array_[parseInt(Globe._cartesian3Array_.length/2)],new Cesium.LabelGraphics({
-                        text:Measure.calcLength(Globe._cartesian3Array_).toFixed(2)+' m',
-                        scale:0.35
-                    }));
-                }else {
-                    Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
-                }
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        Globe._handler_.setInputAction(function (move) {
-            //加入计算结果中，以便删除
-            measureEntities.push(Globe._entity_);
-            updateClearMeasureButton();
 
-            reset();
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
- 
-        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
-    };
-    //采用第一个是点，第二个便是线，三+就是面
-    document.getElementById("area").onclick=function () {
-        clearErrorMeasureData();
-        Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._cartesian3Array_.push(cartesian);
-                if(Globe._entity_!==undefined){
-                    viewer.entities.remove(Globe._entity_);
-                    if(Globe._cartesian3Array_.length===2){
-                        Globe._entity_=Editor.addLine(Globe._cartesian3Array_);
-                    }else{
-                        Globe._entity_=Editor.addPolygon(
-                            new Cesium.PolygonHierarchy(Globe._cartesian3Array_),
-                            Globe._cartesian3Array_[parseInt(Globe._cartesian3Array_.length/2)],
-                        new Cesium.LabelGraphics({
-                            text:Measure.calcArea(Globe._cartesian3Array_).toFixed(2)+' m^2',
-                            scale:0.35
-                        }));
-                    }
-                }
-                else {
-                    Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
-                }
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        Globe._handler_.setInputAction(function (move) {
-           
-            //加入计算结果中，以便删除
-            measureEntities.push(Globe._entity_);
-            updateClearMeasureButton();
-            //reset
-            reset();
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
- 
-        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
-    };
+    require(["../js/main"],function () {
+        require.config({
+            baseUrl:'../js/lib/Cesium'
+        });
+       require(["Cesium","app/EditorModule","app/MeasureModule","lib/domReady!"],function (Cesium,Editor,Measure) {
+           'use strict';
+           Cesium.BingMapsApi.defaultKey="Ai50Y21LEk2ZbEcY78R_vXpCk6gZvZ9dxuGoMHppV-nzLuTkfDz1wNt8knbly0zW";
+           const viewer=new Cesium.Viewer("CesiumContainer");
+           var editor=new Editor(viewer.entities);
+           const handler=new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+           viewer.terrainProvider=new Cesium.createWorldTerrain();
 
-    document.getElementById('Azimuth').onclick=function () {
-        clearErrorMeasureData();
-        Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._cartesian3Array_.push(cartesian);
-                let len=Globe._cartesian3Array_.length;
-                if(len%2===0&&Globe._entity_!==undefined){
-                    //delete
-                    viewer.entities.remove(Globe._entity_);
-                    let left=Measure.generateVerticalLine(Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]);
-                    //画两条线
-                    measureEntities.push(Editor.addLine([Globe._cartesian3Array_[len-2],left],undefined,undefined,{
-                        width:5.0
-                    }));
-                    measureEntities.push(Editor.addLine(
-                        [Globe._cartesian3Array_[len-2],Globe._cartesian3Array_[len-1]],
-                        Globe._cartesian3Array_[len-2],
-                        new Cesium.LabelGraphics({
-                            text:Measure.decorateCalcAzimuth(Globe._cartesian3Array_[len-1],Globe._cartesian3Array_[len-2]).toFixed(2)+'度',
-                            scale:0.5
-                        }),
-                        {
-                            width:5.0
-                        }
-                    ));
-                    Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                    updateClearMeasureButton();
-                }else {
-                    Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[Globe._cartesian3Array_.length-1]);
-                }
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-    };
-    document.getElementById('Height').onclick=function () {
-        clearErrorMeasureData();
-        Globe._handler_.setInputAction(function (move) {
-            let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
-            if(cartesian){
-                Globe._cartesian3Array_.push(cartesian);
-                if(Globe._entity_!==undefined&&Globe._cartesian3Array_.length===2){
-                    viewer.entities.remove(Globe._entity_);
-                    measureEntities.push(Editor.addLine(
-                        Globe._cartesian3Array_,
-                        Globe._cartesian3Array_[parseInt(Globe._cartesian3Array_.length)/2],
-                        new Cesium.LabelGraphics({
-                            text:Measure.calcRelativeHeight(Globe._cartesian3Array_)[0].toFixed(2)+" m ",
-                            scale:0.35
-                        })
-                    ));
-                    reset();
-                    Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-                    updateClearMeasureButton();
-                }else {
-                    Globe._entity_=Editor.addPoint(Globe._cartesian3Array_[0]);
-                }
+           //用于成功创建后entity清空用
+           var measureEntities=[];
+           document.getElementById("point").onclick=function () {
+               //设置inputAction
+               editor.cleanErrorEditData(handler);
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       
+                       let entity=editor.addPoint(cartesian,new Cesium.LabelGraphics({
+                           text:Measure.Geo2Str(cartesian,2),
+                           scale:0.35,
+                           pixelOffset:new Cesium.Cartesian2(10,-10)//右上角偏移
+                       }));
+                       editor.entity(entity);
+                       //加入计算结果中，以便删除
+                       measureEntities.push(entity);
+                       updateClearMeasureButton();
+                       editor.reset();
+                       handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+           };
+           //采用每个点
+           document.getElementById("length").onclick=function () {
 
-            }
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+               editor.cleanErrorEditData(handler);
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       editor.cartesian3ArrayPush(cartesian);
+                       let entity=editor.entity();
+                       if(entity!==undefined){
+                           viewer.entities.remove(entity);
+                           entity=editor.addPolyline(editor.cartesian3Array(),editor.cartesian3Array()[parseInt(editor.cartesian3Array().length/2)],new Cesium.LabelGraphics({
+                               text:Measure.calcLength(editor.cartesian3Array()).toFixed(2)+' m',
+                               scale:0.35
+                           }));
+                           editor.entity(entity);
+                       }else {
+                           entity=editor.addPoint(editor.cartesian3Array()[0]);
+                           editor.entity(entity);
+                       }
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+               handler.setInputAction(function (move) {
+                   //加入计算结果中，以便删除
+                   let entity=editor.entity();
+                   measureEntities.push(entity);
+                   updateClearMeasureButton();
 
-    };
-    document.getElementById('clearMeasureData').onclick=function () {
-        cleanMeasureData();
-    };
+                   editor.reset();
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+               }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
+           };
+           //采用第一个是点，第二个便是线，三+就是面
+           document.getElementById("area").onclick=function () {
+               editor.cleanErrorEditData(handler);
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       let entity=editor.entity();
+                       editor.cartesian3Array().push(cartesian);
+                       if(entity!==undefined){
+                           viewer.entities.remove(entity);
+                           if(editor.cartesian3Array().length===2){
+                               entity=editor.addPolyline(editor.cartesian3Array());
+                               editor.entity(entity);
+                           }else{
+                               entity=editor.addPolygon(
+                                   new Cesium.PolygonHierarchy(editor.cartesian3Array()),
+                                   editor.cartesian3Array()[parseInt(editor.cartesian3Array().length/2)],
+                                   new Cesium.LabelGraphics({
+                                       text:Measure.calcArea(editor.cartesian3Array()).toFixed(2)+' m^2',
+                                       scale:0.35
+                                   }));
+                               editor.entity(entity);
+                           }
+                       }
+                       else {
+                           entity=editor.addPoint(editor.cartesian3Array()[0]);
+                           editor.entity(entity);
+                       }
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+               handler.setInputAction(function (move) {
+                   let entity=editor.entity();
+                   //加入计算结果中，以便删除
+                   measureEntities.push(entity);
+                   updateClearMeasureButton();
+                   //reset
+                   editor.reset();
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+               }, Cesium.ScreenSpaceEventType.RIGHT_CLICK );
+           };
+
+           document.getElementById('Azimuth').onclick=function () {
+               editor.cleanErrorEditData(handler);
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       let entity=editor.entity();
+                       editor.cartesian3Array().push(cartesian);
+                       let len=editor.cartesian3Array().length;
+                       if(len%2===0&&entity!==undefined){
+                           //delete
+                           viewer.entities.remove(entity);
+                           let left=Measure.generateVerticalLine(editor.cartesian3Array()[len-2],editor.cartesian3Array()[len-1]);
+                           //画两条线
+                           measureEntities.push(editor.addPolyline([editor.cartesian3Array()[len-2],left],undefined,undefined,{
+                               width:5.0
+                           }));
+                           measureEntities.push(editor.addPolyline(
+                               [editor.cartesian3Array()[len-2],editor.cartesian3Array()[len-1]],
+                               editor.cartesian3Array()[len-2],
+                               new Cesium.LabelGraphics({
+                                   text:Measure.decorateCalcAzimuth(editor.cartesian3Array()[len-1],editor.cartesian3Array()[len-2]).toFixed(2)+'度',
+                                   scale:0.5
+                               }),
+                               {
+                                   width:5.0
+                               }
+                           ));
+                           handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                           updateClearMeasureButton();
+                       }else {
+                           entity=editor.addPoint(editor.cartesian3Array()[editor.cartesian3Array().length-1]);
+                           editor.entity(entity);
+                       }
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+           };
+           document.getElementById('Height').onclick=function () {
+               editor.cleanErrorEditData(handler);
+               handler.setInputAction(function (move) {
+                   let cartesian=viewer.camera.pickEllipsoid(move.position,viewer.scene.globe.ellipsoid);
+                   if(cartesian){
+                       let entity=editor.entity();
+                       editor.cartesian3Array().push(cartesian);
+                       if(entity!==undefined&&editor.cartesian3Array().length===2){
+                           viewer.entities.remove(entity);
+                           measureEntities.push(Editor.addPolyline(
+                               editor.cartesian3Array(),
+                               editor.cartesian3Array()[parseInt(editor.cartesian3Array().length)/2],
+                               new Cesium.LabelGraphics({
+                                   text:Measure.calcRelativeHeight(editor.cartesian3Array(),viewer.scene.globe)[0].toFixed(2)+" m ",
+                                   scale:0.35
+                               })
+                           ));
+                           editor.reset();
+                           handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                           updateClearMeasureButton();
+                       }else {
+                           entity=editor.addPoint(editor.cartesian3Array()[0]);
+                           editor.entity(entity);
+                       }
+
+                   }
+               }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+           };
+           document.getElementById('clearMeasureData').onclick=function () {
+               cleanMeasureData();
+           };
 
 
-    //只有在MeasureEntities 不为空时才会点击清空测量结果
-    function updateClearMeasureButton() {
-        if(measureEntities.length>0){
-            document.getElementById('clearMeasureData').removeAttribute('disabled');
-        }else{
-            document.getElementById('clearMeasureData').setAttribute('disabled','disabled');
-        }
-    }
-    function clearErrorMeasureData(){
-        if(Globe._entity_!==undefined){
-            viewer.entities.remove(Globe._entity_);
-            reset();
-        }
-        if(Globe._handler_!==undefined){
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        }
-    }
-    function cleanMeasureData() {
-        if(Globe._entity_!==undefined){
-            viewer.entities.remove(Globe._entity_);
-            reset();
-        }
-        if(Globe._handler_!==undefined){
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
-            Globe._handler_.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
-        }
-        for(let i=0;i<measureEntities.length;++i){
-            viewer.entities.remove(measureEntities[i]);
-        }
-        measureEntities=[];
-        updateClearMeasureButton();
-    }
+           //只有在MeasureEntities 不为空时才会点击清空测量结果
+           function updateClearMeasureButton() {
+               if(measureEntities.length>0){
+                   document.getElementById('clearMeasureData').removeAttribute('disabled');
+               }else{
+                   document.getElementById('clearMeasureData').setAttribute('disabled','disabled');
+               }
+           }
+
+           function cleanMeasureData() {
+               let entity=editor.entity();
+               if(entity!==undefined){
+                   viewer.entities.remove(entity);
+                   editor.reset();
+               }
+               if(handler!==undefined){
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+                   handler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_CLICK);
+               }
+
+               for(let i=0;i<measureEntities.length;++i){
+                   viewer.entities.remove(measureEntities[i]);
+               }
+               measureEntities=[];
+               updateClearMeasureButton();
+           }
+       }); 
+    });
 </script>
 </body>
 </html>

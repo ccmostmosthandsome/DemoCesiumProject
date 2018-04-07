@@ -91,18 +91,8 @@ date 2018.3.23
         console.log(radAB*180/Math.PI);
         var a=WorldCoord2WebMercatorCoordWithHeight(cartesian3Array,wgs84globe);
         
-        var answer=InterpolationByGetValue(a[0],a[1],viewer.scene.globe);
-        //verify interpolation is correct
-        for(let i=0;i<answer.length;++i){
-            viewer.entities.add({
-                poisition:Cesium.Cartesian3.fromRadians(answer[i].longitude,answer[i].latitude,answer[i].height),
-                point:new Cesium.PointGraphics({
-                    pixelSize:10,
-                    HeightReference:Cesium.HeightReference.CLAMP_TO_GROUND,
-                    color:Cesium.Color.YELLOW
-                })
-            })
-        }
+        var answer=InterpolationByGetValue(a[0],a[1],10,10,viewer.scene.globe);
+
         for(let i=1;i<answer.length;++i){
             let [start,end]=[arr[0],
             Cesium.Cartesian3.fromRadians(answer[i].longitude,answer[i].latitude,answer[i].height)];
